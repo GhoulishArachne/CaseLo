@@ -1408,7 +1408,7 @@ function App() {
     };
   }
 
-  function submitComplaint(event) {
+  async function submitComplaint(event) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
 
@@ -1520,6 +1520,30 @@ function App() {
       created.mandatoryIAReviewReasons = screening.mandatoryIAReviewReasons;
     }
 
+    // Save to Supabase FIRST before updating local state
+    try {
+      const complaintData = {
+        complaint_number: created.id,
+        complaint_type: created.complaintType,
+        complainant: created.complainant,
+        contact: created.contact,
+        incident: created.incident,
+        status: created.status,
+        description: created.description,
+        narrative: created.narrative,
+        category: created.category,
+        supervisor_referral: created.supervisorReferral,
+        screening: created.screening,
+        notes: created.title,
+      };
+      await complaintsService.create(complaintData);
+    } catch (error) {
+      console.error("Failed to save complaint to Supabase:", error);
+      alert("Failed to save complaint. Please try again.");
+      return;
+    }
+
+    // Only update local state AFTER successful Supabase save
     save(next);
     setActiveComplaintId(created.id);
     event.currentTarget.reset();
