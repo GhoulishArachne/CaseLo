@@ -30,6 +30,7 @@ const seedData = {
   events: [],
   notes: [],
   tasks: [],
+  findings: [],
 };
 
 const storeKey = "case-logger-data-v2";
@@ -57,6 +58,11 @@ const themeColors = [
   { name: "Teal", dark: "#0f3f3f", accent: "#14b8a6" },
 ];
 
+const findingTypes = ["Sustained", "Not Sustained", "Exonerated", "Unfounded", "Policy Failure"];
+const iaRecommendationTemplates = ["No Action", "Coaching", "Counseling", "Written Warning", "Suspension", "Termination"];
+const disciplineTemplates = ["None", "Counseling", "Written Warning", "Suspension", "Termination"];
+const severityLevels = ["None", "Low", "Medium", "High"];
+
 function getRankIndex(rank) {
   return rankOrder.indexOf(rank || "") === -1 ? rankOrder.length : rankOrder.indexOf(rank);
 }
@@ -78,6 +84,15 @@ function nextComplaintNumber(complaints) {
     .map(Number);
   const next = numbers.length ? Math.max(...numbers) + 1 : 1;
   return `CPL-${String(next).padStart(3, "0")}`;
+}
+
+function nextFindingNumber(findings) {
+  const numbers = findings
+    .map((item) => String(item.id).match(/^FN-(\d+)$/)?.[1])
+    .filter(Boolean)
+    .map(Number);
+  const next = numbers.length ? Math.max(...numbers) + 1 : 1;
+  return `FN-${String(next).padStart(3, "0")}`;
 }
 
 function normalizeData(data) {
@@ -178,6 +193,24 @@ function normalizeData(data) {
       mandatoryIAReviewAlert: Boolean(item?.mandatoryIAReviewAlert),
       mandatoryIAReviewReasons: item?.mandatoryIAReviewReasons ?? [],
     })),
+    findings: (data.findings ?? []).map((item) => ({
+      ...item,
+      finding: findingTypes.includes(item.finding) ? item.finding : "Sustained",
+      iaRecommendationTemplate: iaRecommendationTemplates.includes(item.iaRecommendationTemplate) ? item.iaRecommendationTemplate : "",
+      disciplineTemplate: disciplineTemplates.includes(item.disciplineTemplate) ? item.disciplineTemplate : "None",
+      severityLevel: severityLevels.includes(item.severityLevel) ? item.severityLevel : "None",
+      commandReviewStatus: ["Pending", "Approved", "Rejected"].includes(item.commandReviewStatus) ? item.commandReviewStatus : "Pending",
+      appealStatus: ["None", "Pending", "Approved", "Denied"].includes(item.appealStatus) ? item.appealStatus : "None",
+      description: item.description || "",
+      iaRecommendation: item.iaRecommendation || "",
+      disciplineRecommendation: item.disciplineRecommendation || "",
+      correctiveActionRecommendation: item.correctiveActionRecommendation || "",
+      commandReview: item.commandReview || "",
+      finalDisposition: item.finalDisposition || "",
+      officerInvolved: item.officerInvolved || "",
+      dateCreated: item.dateCreated || new Date().toISOString().slice(0, 10),
+      adjudicatedBy: item.adjudicatedBy || "",
+    })),
   };
 }
 
@@ -204,7 +237,7 @@ function App() {
 
   const activeCase = data.cases.find((item) => item.id === activeCaseId) ?? data.cases[0];
   const activeComplaint = data.complaints?.find((item) => item.id === activeComplaintId) ?? data.complaints?.[0];
-  const navItems = ["Dashboard", "Cases", "Evidence", "People", "Timeline", "Tasks", "Notes", "Complaints", "Reports", "Settings"];
+  const navItems = ["Dashboard", "Cases", "Evidence", "People", "Timeline", "Tasks", "Notes", "Complaints", "Adjudication", "Reports", "Settings"];
   const [themeIndex, setThemeIndex] = useState(() => {
     const saved = localStorage.getItem("theme-index");
     return saved ? parseInt(saved) : 0;
@@ -582,6 +615,52 @@ function createPerson(event) {
     save(next);
   }
 
+  function createFinding(event) {
+    event.preventDefault();
+    if (!activeCase) return;
+    const form = new FormData(event.currentTarget);
+    const finding = form.get("finding").toString().trim();
+    if (!finding) return;
+
+    const next = {
+      ...data,
+      findings: [
+        {
+          id: nextFindingNumber(data.findings),
+          caseId: activeCase.id,
+          finding,
+          description: form.get("description")?.toString().trim() || "",
+          officerInvolved: form.get("officerInvolved")?.toString().trim() || "",
+          iaRecommendation: form.get("iaRecommendation")?.toString().trim() || "",
+          iaRecommendationTemplate: form.get("iaRecommendationTemplate")?.toString() || "",
+          disciplineRecommendation: form.get("disciplineRecommendation")?.toString().trim() || "",
+          disciplineTemplate: form.get("disciplineTemplate")?.toString() || "None",
+          severityLevel: form.get("severityLevel")?.toString() || "None",
+          correctiveActionRecommendation: form.get("correctiveActionRecommendation")?.toString().trim() || "",
+          commandReview: form.get("commandReview")?.toString().trim() || "",
+          commandReviewStatus: form.get("commandReviewStatus")?.toString() || "Pending",
+          finalDisposition: form.get("finalDisposition")?.toString().trim() || "",
+          appealStatus: form.get("appealStatus")?.toString() || "None",
+          dateCreated: new Date().toISOString().slice(0, 10),
+          adjudicatedBy: form.get("adjudicatedBy")?.toString().trim() || "",
+        },
+        ...data.findings,
+      ],
+    };
+    save(next);
+    event.currentTarget.reset();
+  }
+
+  function editFinding(findingId, updates) {
+    const next = {
+      ...data,
+      findings: data.findings.map((f) =>
+        f.id !== findingId ? f : { ...f, ...updates }
+      ),
+    };
+    save(next);
+  }
+
   function addItem(event) {
     event.preventDefault();
     if (!activeCase) return;
@@ -681,6 +760,7 @@ function createPerson(event) {
       events: data.events.filter((item) => item.caseId === activeCase.id),
       notes: data.notes.filter((item) => item.caseId === activeCase.id),
       tasks: data.tasks.filter((item) => item.caseId === activeCase.id),
+      findings: data.findings.filter((item) => item.caseId === activeCase.id),
     };
   }, [activeCase, data]);
 
@@ -912,7 +992,7 @@ function createPerson(event) {
         {activeView === "Evidence" && <CollectionView title="Evidence" icon={Fingerprint} items={visibleRecords.evidence} render={EvidenceItem} />}
         {activeView === "People" && <PeopleView data={data} visiblePeople={visibleRecords.people} createPerson={createPerson} editPerson={editPerson} earlyInterventionByEmployeeId={earlyInterventionByEmployeeId} />}
         {activeView === "Complaints" && <ComplaintsView data={data} activeCase={activeCase} visibleComplaints={visibleRecords.complaints} createComplaint={submitComplaint} setActiveComplaintId={setActiveComplaintId} />}
-
+        {activeView === "Adjudication" && <AdjudicationTab data={data} activeCase={activeCase} editFinding={editFinding} />}
 
         {activeView === "Timeline" && <CollectionView title="Timeline" icon={CalendarDays} items={visibleRecords.events} render={EventItem} />}
         {activeView === "Tasks" && <CollectionView title="Tasks" icon={ClipboardList} items={visibleRecords.tasks} render={TaskItem} />}
@@ -1269,7 +1349,10 @@ function CaseDetail({ activeCase, caseRecords, data, setData }) {
             <RecordPanel title="People & Entities" icon={UserRound} items={caseRecords.people} render={PersonItem} />
             <RecordPanel title="Tasks" icon={CheckCircle2} items={caseRecords.tasks} render={TaskItem} />
             <RecordPanel title="Notes" icon={FileSearch} items={caseRecords.notes} render={NoteItem} wide />
+            <RecordPanel title="Findings & Adjudication" icon={CheckCircle2} items={caseRecords.findings} render={FindingItem} wide />
           </div>
+
+          <AdjudicationPanel caseId={activeCase.id} findings={caseRecords.findings} editFinding={editFinding} people={data.people} />
         </>
       ) : (
         <div className="empty">Create a case to begin logging records.</div>
@@ -1441,6 +1524,26 @@ function RecordPanel({ title, icon: Icon, items, render, wide }) {
         {items.length ? items.map((item) => <React.Fragment key={item.id}>{render(item)}</React.Fragment>) : <p className="empty-small">No records yet.</p>}
       </div>
     </article>
+  );
+}
+
+function FindingItem(item) {
+  return (
+    <div className="record">
+      <strong>{item.finding}</strong>
+      <span>
+        <CheckCircle2 size={14} /> {item.id}
+      </span>
+      <small>{item.description}</small>
+      <span style={{ display: "flex", gap: 8 }}>
+        <span className={`pill ${item.commandReviewStatus === "Approved" ? "confirmed" : item.commandReviewStatus === "Rejected" ? "high" : "pending"}`}>
+          Command: {item.commandReviewStatus}
+        </span>
+        <span className={`pill ${item.appealStatus === "None" ? "confirmed" : item.appealStatus === "Approved" ? "confirmed" : "high"}`}>
+          Appeal: {item.appealStatus}
+        </span>
+      </span>
+    </div>
   );
 }
 
@@ -1658,6 +1761,114 @@ function ReportItem(item) {
       <strong>{item.title}</strong>
       <small>{item.body}</small>
     </div>
+  );
+}
+
+function AdjudicationPanel({ caseId, findings, editFinding, people }) {
+  const [selectedFindingId, setSelectedFindingId] = useState(null);
+  const caseFinding = findings.find((f) => f.id === selectedFindingId);
+
+  if (!findings.length) return null;
+
+  return (
+    <section className="panel forms" style={{ padding: 16 }}>
+      <div className="panel-head compact" style={{ marginTop: 0 }}>
+        <h2>Findings & Adjudication</h2>
+      </div>
+
+      <div className="stack" style={{ maxHeight: 300, overflow: "auto", marginBottom: 12 }}>
+        {findings.map((f) => (
+          <button
+            key={f.id}
+            onClick={() => setSelectedFindingId(f.id)}
+            style={{
+              all: "unset",
+              display: "block",
+              padding: 10,
+              border: selectedFindingId === f.id ? "2px solid #2f7f67" : "1px solid #dce4e1",
+              borderRadius: 6,
+              textAlign: "left",
+              cursor: "pointer",
+              background: selectedFindingId === f.id ? "#f0faf8" : "#fbfcfb",
+            }}
+          >
+            <strong style={{ fontSize: 13 }}>{f.finding}</strong>
+            <small style={{ display: "block", color: "#60716c" }}>{f.id}</small>
+          </button>
+        ))}
+      </div>
+
+      {caseFinding && (
+        <div style={{ paddingTop: 12, borderTop: "1px solid #dce4e1" }}>
+          <div className="row" style={{ marginTop: 10 }}>
+            <select value={caseFinding.finding} onChange={(e) => editFinding(caseFinding.id, { finding: e.target.value })}>
+              {findingTypes.map((f) => (
+                <option key={f} value={f}>{f}</option>
+              ))}
+            </select>
+            <select value={caseFinding.appealStatus} onChange={(e) => editFinding(caseFinding.id, { appealStatus: e.target.value })}>
+              <option value="None">Appeal: None</option>
+              <option value="Pending">Appeal: Pending</option>
+              <option value="Approved">Appeal: Approved</option>
+              <option value="Denied">Appeal: Denied</option>
+            </select>
+          </div>
+          <textarea
+            value={caseFinding.description}
+            onChange={(e) => editFinding(caseFinding.id, { description: e.target.value })}
+            placeholder="Finding description"
+            style={{ marginTop: 10, minHeight: 60 }}
+          />
+        </div>
+      )}
+    </section>
+  );
+}
+
+function AdjudicationTab({ data, activeCase, editFinding }) {
+  const allFindings = data.findings || [];
+  const caseFindingIds = new Set(allFindings.filter((f) => f.caseId === activeCase?.id).map((f) => f.id));
+
+  return (
+    <section className="collection-view">
+      <div className="collection-head">
+        <h2>Findings & Adjudication</h2>
+        <span>{allFindings.length} total</span>
+      </div>
+
+      <div className="collection-list">
+        {allFindings.length ? (
+          allFindings.map((finding) => (
+            <div
+              key={finding.id}
+              style={{
+                padding: 12,
+                borderBottom: "1px solid #edf1ef",
+                background: caseFindingIds.has(finding.id) ? "#f0faf8" : "transparent",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: 12 }}>
+                <div>
+                  <strong style={{ fontSize: 14 }}>{finding.finding}</strong>
+                  <small style={{ display: "block", color: "#60716c", marginTop: 2 }}>{finding.id} · {finding.caseId}</small>
+                  <small style={{ display: "block", color: "#60716c", marginTop: 4 }}>{finding.description}</small>
+                </div>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <span className={`pill ${finding.commandReviewStatus === "Approved" ? "confirmed" : finding.commandReviewStatus === "Rejected" ? "high" : "pending"}`}>
+                    {finding.commandReviewStatus}
+                  </span>
+                  <span className={`pill ${finding.appealStatus === "None" ? "confirmed" : finding.appealStatus === "Approved" ? "confirmed" : "high"}`}>
+                    {finding.appealStatus}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <p className="empty">No findings yet.</p>
+        )}
+      </div>
+    </section>
   );
 }
 
