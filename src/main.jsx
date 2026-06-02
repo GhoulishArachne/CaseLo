@@ -727,6 +727,39 @@ function App() {
         setData(loadedData);
         setActiveCaseId(loadedData.cases?.[0]?.id ?? "");
         setActiveComplaintId(loadedData.complaints?.[0]?.id ?? "");
+
+        // Apply branding from Supabase if available
+        const brandingOpt = loadedData.customOptions?.find(
+          (opt) => opt.category === "branding"
+        );
+        if (brandingOpt?.options) {
+          const brandingArray = Array.isArray(brandingOpt.options)
+            ? brandingOpt.options
+            : JSON.parse(brandingOpt.options);
+          if (Array.isArray(brandingArray) && brandingArray.length > themeIndex) {
+            const savedTheme = brandingArray[themeIndex];
+            // Apply CSS variables from saved branding
+            if (savedTheme.dark)
+              document.documentElement.style.setProperty("--theme-dark", savedTheme.dark);
+            if (savedTheme.accent)
+              document.documentElement.style.setProperty("--theme-accent", savedTheme.accent);
+            if (savedTheme.departmentName)
+              document.documentElement.style.setProperty("--dept-name", savedTheme.departmentName);
+            if (savedTheme.departmentLogoUrl)
+              document.documentElement.style.setProperty(
+                "--dept-logo-url",
+                savedTheme.departmentLogoUrl ? `url('${savedTheme.departmentLogoUrl}')` : "none"
+              );
+            if (savedTheme.reportHeaderText)
+              document.documentElement.style.setProperty("--report-header", savedTheme.reportHeaderText);
+            if (savedTheme.signatureBlockText)
+              document.documentElement.style.setProperty("--signature-block", savedTheme.signatureBlockText);
+            if (savedTheme.accentSecondaryColor)
+              document.documentElement.style.setProperty("--secondary-accent", savedTheme.accentSecondaryColor);
+            // Update the global themeColors
+            themeColors[themeIndex] = savedTheme;
+          }
+        }
       } catch (error) {
         console.error("Error loading data:", error);
         // Use seedData as fallback
@@ -3914,7 +3947,7 @@ function BrandingSettingsPanel({ themeIndex, themeColors, setThemeIndex }) {
   const [, forceUpdate] = useState(0);
   const currentTheme = themeColors[themeIndex];
 
-  function handleBrandingChange(field, value) {
+  async function handleBrandingChange(field, value) {
     const updated = [...themeColors];
     updated[themeIndex] = {
       ...currentTheme,
@@ -3923,6 +3956,13 @@ function BrandingSettingsPanel({ themeIndex, themeColors, setThemeIndex }) {
     // Update the themeColors array
     themeColors.splice(0, themeColors.length, ...updated);
     localStorage.setItem("theme-index", themeIndex.toString());
+
+    // Save to Supabase
+    try {
+      await customOptionsService.updateByCategory("branding", updated);
+    } catch (error) {
+      console.error("Failed to save branding:", error);
+    }
 
     // Apply CSS variables immediately
     if (field === "departmentName") {
