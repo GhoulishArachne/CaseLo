@@ -53,6 +53,53 @@ const seedData = {
   notes: [],
   tasks: [],
   findings: [],
+  violations: [
+    {
+      id: "VC-001",
+      name: "Conduct Unbecoming",
+      description: "Officer engaged in conduct that is unbecoming to a member of the department, or conduct that would reflect adversely upon the department.",
+      category: "Conduct",
+      severityLevel: "High",
+      defaultDisciplineTemplate: "Suspension",
+      notes: "",
+    },
+    {
+      id: "VC-002",
+      name: "Neglect of Duty",
+      description: "Officer failed to perform assigned duties or responsibilities with diligence and competence required of a police officer.",
+      category: "Performance",
+      severityLevel: "Medium",
+      defaultDisciplineTemplate: "Written Warning",
+      notes: "",
+    },
+    {
+      id: "VC-003",
+      name: "Corruption",
+      description: "Officer engaged in corrupt practices, including solicitation or acceptance of bribes, extortion, or use of official position for personal gain.",
+      category: "Integrity",
+      severityLevel: "Critical",
+      defaultDisciplineTemplate: "Termination",
+      notes: "",
+    },
+    {
+      id: "VC-004",
+      name: "Truthfulness Violation",
+      description: "Officer made false or misleading statements, reports, or testimony in an official capacity.",
+      category: "Integrity",
+      severityLevel: "High",
+      defaultDisciplineTemplate: "Suspension",
+      notes: "",
+    },
+    {
+      id: "VC-005",
+      name: "Excessive Force",
+      description: "Officer used force that exceeded what was necessary or reasonable under the circumstances.",
+      category: "Conduct",
+      severityLevel: "High",
+      defaultDisciplineTemplate: "Suspension",
+      notes: "",
+    },
+  ],
 };
 
 const storeKey = "case-logger-data-v2";
@@ -84,6 +131,9 @@ const findingTypes = ["Sustained", "Not Sustained", "Exonerated", "Unfounded", "
 const iaRecommendationTemplates = ["No Action", "Coaching", "Counseling", "Written Warning", "Suspension", "Termination"];
 const disciplineTemplates = ["None", "Counseling", "Written Warning", "Suspension", "Termination"];
 const severityLevels = ["None", "Low", "Medium", "High"];
+
+const violationCategories = ["Conduct", "Performance", "Integrity", "Safety", "Use of Force", "Other"];
+const violationSeverityLevels = ["Low", "Medium", "High", "Critical"];
 
 function getRankIndex(rank) {
   return rankOrder.indexOf(rank || "") === -1 ? rankOrder.length : rankOrder.indexOf(rank);
@@ -237,6 +287,16 @@ function normalizeData(data) {
       dateCreated: item.dateCreated || new Date().toISOString().slice(0, 10),
       adjudicatedBy: item.adjudicatedBy || "",
     })),
+    violations: (data.violations ?? []).map((item) => ({
+      ...item,
+      id: item.id || "",
+      name: item.name || "",
+      description: item.description || "",
+      category: violationCategories.includes(item.category) ? item.category : "Other",
+      severityLevel: violationSeverityLevels.includes(item.severityLevel) ? item.severityLevel : "Medium",
+      defaultDisciplineTemplate: disciplineTemplates.includes(item.defaultDisciplineTemplate) ? item.defaultDisciplineTemplate : "None",
+      notes: item.notes || "",
+    })),
   };
 }
 
@@ -332,6 +392,60 @@ function App() {
     };
     save(next);
     setActiveCaseId(null);
+  }
+
+  function nextViolationCode(violations) {
+    const numbers = violations
+      .map((item) => String(item.id).match(/^VC-(\d+)$/)?.[1])
+      .filter(Boolean)
+      .map(Number);
+    const next = numbers.length ? Math.max(...numbers) + 1 : 1;
+    return `VC-${String(next).padStart(3, "0")}`;
+  }
+
+  function createViolation(event) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const name = form.get("name").toString().trim();
+    if (!name) return;
+
+    const id = nextViolationCode(data.violations);
+    const next = {
+      ...data,
+      violations: [
+        {
+          id,
+          name,
+          description: form.get("description").toString().trim(),
+          category: form.get("category") || "Other",
+          severityLevel: form.get("severityLevel") || "Medium",
+          defaultDisciplineTemplate: form.get("defaultDisciplineTemplate") || "None",
+          notes: form.get("notes").toString().trim(),
+        },
+        ...data.violations,
+      ],
+    };
+    save(next);
+    event.currentTarget.reset();
+  }
+
+  function editViolation(violationId, updates) {
+    const next = {
+      ...data,
+      violations: data.violations.map((v) =>
+        v.id !== violationId ? v : { ...v, ...updates }
+      ),
+    };
+    save(next);
+  }
+
+  function deleteViolation(violationId) {
+    if (!window.confirm(`Delete violation ${violationId}? This action cannot be undone.`)) return;
+    const next = {
+      ...data,
+      violations: data.violations.filter((v) => v.id !== violationId),
+    };
+    save(next);
   }
 
   function parseCsv(text) {
@@ -1113,7 +1227,17 @@ function createPerson(event) {
         {activeView === "Tasks" && <CollectionView title="Tasks" icon={ClipboardList} items={visibleRecords.tasks} render={TaskItem} />}
         {activeView === "Notes" && <CollectionView title="Notes" icon={FileSearch} items={visibleRecords.notes} render={NoteItem} />}
         {activeView === "Reports" && <Reports data={data} metrics={metrics} earlyInterventionByEmployeeId={earlyInterventionByEmployeeId} />}
-        {activeView === "Settings" && <SettingsView themeIndex={themeIndex} setThemeIndex={setThemeIndex} />}
+        {activeView === "Settings" && (
+          <SettingsView
+            themeIndex={themeIndex}
+            setThemeIndex={setThemeIndex}
+            data={data}
+            setData={setData}
+            createViolation={createViolation}
+            editViolation={editViolation}
+            deleteViolation={deleteViolation}
+          />
+        )}
 
       </section>
     </main>
@@ -2229,7 +2353,196 @@ function OfficerProfileView({ data, officerProfiles, selectedOfficerId, setSelec
   );
 }
 
-function SettingsView({ themeIndex, setThemeIndex }) {
+function ViolationLibraryPanel({ violations, onEdit, onDelete }) {
+  return (
+    <div className="panel" style={{ padding: 16 }}>
+      <h3 style={{ margin: "0 0 16px" }}>Offense Library</h3>
+      <div style={{ overflowX: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+          <thead>
+            <tr style={{ borderBottom: "2px solid #dce4e1" }}>
+              <th style={{ textAlign: "left", padding: "8px 0", fontWeight: 700, color: "#60716c" }}>Code</th>
+              <th style={{ textAlign: "left", padding: "8px 0", fontWeight: 700, color: "#60716c" }}>Name</th>
+              <th style={{ textAlign: "left", padding: "8px 0", fontWeight: 700, color: "#60716c" }}>Category</th>
+              <th style={{ textAlign: "left", padding: "8px 0", fontWeight: 700, color: "#60716c" }}>Severity</th>
+              <th style={{ textAlign: "left", padding: "8px 0", fontWeight: 700, color: "#60716c" }}>Default Discipline</th>
+              <th style={{ textAlign: "center", padding: "8px 0", fontWeight: 700, color: "#60716c" }}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {violations.map((v) => (
+              <tr key={v.id} style={{ borderBottom: "1px solid #edf1ef" }}>
+                <td style={{ padding: "12px 0", fontWeight: 700, color: "#2f7f67" }}>{v.id}</td>
+                <td style={{ padding: "12px 0" }}>{v.name}</td>
+                <td style={{ padding: "12px 0" }}>{v.category}</td>
+                <td style={{ padding: "12px 0" }}>{v.severityLevel}</td>
+                <td style={{ padding: "12px 0" }}>{v.defaultDisciplineTemplate}</td>
+                <td style={{ padding: "12px 0", textAlign: "center" }}>
+                  <button
+                    onClick={() => onEdit(v.id)}
+                    style={{
+                      background: "transparent",
+                      border: 0,
+                      color: "#2f7f67",
+                      cursor: "pointer",
+                      fontWeight: 700,
+                      fontSize: 13,
+                      marginRight: 12,
+                    }}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => onDelete(v.id)}
+                    style={{
+                      background: "transparent",
+                      border: 0,
+                      color: "#b6492b",
+                      cursor: "pointer",
+                      fontWeight: 700,
+                      fontSize: 13,
+                    }}
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function ViolationForm({ violation, onSubmit, onCancel }) {
+  return (
+    <div className="panel" style={{ padding: 16 }}>
+      <h3 style={{ margin: "0 0 16px" }}>
+        {violation ? "Edit Violation" : "Create New Violation"}
+      </h3>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSubmit(e);
+        }}
+        style={{ display: "grid", gap: 10 }}
+      >
+        <div>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+            Code {violation && `(${violation.id})`}
+          </label>
+          <input
+            name="code"
+            defaultValue={violation?.id || ""}
+            placeholder="Auto-generated"
+            disabled
+            style={{ background: "#f6f9f7", color: "#999" }}
+          />
+        </div>
+        <div>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+            Name *
+          </label>
+          <input
+            name="name"
+            defaultValue={violation?.name || ""}
+            placeholder="e.g., Conduct Unbecoming"
+            required
+          />
+        </div>
+        <div>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+            Description
+          </label>
+          <textarea
+            name="description"
+            defaultValue={violation?.description || ""}
+            placeholder="Full description of this violation"
+            style={{ minHeight: 86 }}
+          />
+        </div>
+        <div className="row">
+          <div style={{ flex: 1 }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+              Category
+            </label>
+            <select name="category" defaultValue={violation?.category || "Other"}>
+              {violationCategories.map((cat) => (
+                <option key={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
+          <div style={{ flex: 1 }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+              Severity
+            </label>
+            <select name="severityLevel" defaultValue={violation?.severityLevel || "Medium"}>
+              {violationSeverityLevels.map((sev) => (
+                <option key={sev}>{sev}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+            Default Discipline
+          </label>
+          <select name="defaultDisciplineTemplate" defaultValue={violation?.defaultDisciplineTemplate || "None"}>
+            {disciplineTemplates.map((disc) => (
+              <option key={disc}>{disc}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+            Additional Notes
+          </label>
+          <textarea
+            name="notes"
+            defaultValue={violation?.notes || ""}
+            placeholder="Guidance or context for investigators"
+            style={{ minHeight: 60 }}
+          />
+        </div>
+        <div className="row" style={{ marginTop: 8 }}>
+          <button type="submit" className="primary">
+            {violation ? "Update Violation" : "Create Violation"}
+          </button>
+          {violation && (
+            <button type="button" onClick={onCancel} style={{ background: "#f6f9f7", border: "1px solid #dce4e1", borderRadius: 6, cursor: "pointer" }}>
+              Cancel
+            </button>
+          )}
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function SettingsView({ themeIndex, setThemeIndex, data, setData, createViolation, editViolation, deleteViolation }) {
+  const [editingViolation, setEditingViolation] = useState(null);
+
+  function handleEditViolation(violationId) {
+    setEditingViolation(data.violations.find((v) => v.id === violationId));
+  }
+
+  function handleSubmitViolation(e) {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    const updates = {
+      name: form.get("name").toString().trim(),
+      description: form.get("description").toString().trim(),
+      category: form.get("category"),
+      severityLevel: form.get("severityLevel"),
+      defaultDisciplineTemplate: form.get("defaultDisciplineTemplate"),
+      notes: form.get("notes").toString().trim(),
+    };
+    editViolation(editingViolation.id, updates);
+    setEditingViolation(null);
+    e.currentTarget.reset();
+  }
+
   return (
     <section className="collection-view">
       <div className="collection-head">
@@ -2269,6 +2582,24 @@ function SettingsView({ themeIndex, setThemeIndex }) {
             ))}
           </div>
         </div>
+
+        <ViolationLibraryPanel
+          violations={data.violations}
+          onEdit={handleEditViolation}
+          onDelete={deleteViolation}
+        />
+
+        {editingViolation && (
+          <ViolationForm
+            violation={editingViolation}
+            onSubmit={handleSubmitViolation}
+            onCancel={() => setEditingViolation(null)}
+          />
+        )}
+
+        {!editingViolation && (
+          <ViolationForm onSubmit={createViolation} />
+        )}
       </div>
     </section>
   );
