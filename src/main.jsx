@@ -2121,8 +2121,120 @@ async function createPerson(event) {
         padding: "24px"
       }}>
         {activeView === "Dashboard" && (
-          <div style={{ padding: "24px", background: "var(--theme-light)" }}>
+          <div style={{ padding: "0" }}>
             <MetricGrid metrics={metrics} />
+
+            {/* Escalation Alerts Section */}
+            {(() => {
+              const escalatedCases = (data.complaints || []).filter(c => c.supervisorReferral?.enabled);
+              const groupedByReason = {};
+
+              escalatedCases.forEach(complaint => {
+                const reason = complaint.supervisorReferral?.referralReason || "No reason provided";
+                if (!groupedByReason[reason]) {
+                  groupedByReason[reason] = [];
+                }
+                groupedByReason[reason].push(complaint);
+              });
+
+              return Object.keys(groupedByReason).length > 0 ? (
+                <div style={{ padding: "24px", marginTop: 24 }}>
+                  <h2 style={{ margin: "0 0 16px 0", fontSize: 18, fontWeight: 700, color: "var(--theme-text)" }}>Escalations Pending Supervisor Review</h2>
+                  <div style={{ display: "grid", gap: 16 }}>
+                    {Object.entries(groupedByReason).map(([reason, complaints]) => (
+                      <div
+                        key={reason}
+                        style={{
+                          background: "white",
+                          border: `2px solid var(--theme-accent)`,
+                          borderRadius: 8,
+                          padding: 16,
+                          boxShadow: "0 2px 4px rgba(0,0,0,0.05)"
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                          <div
+                            style={{
+                              width: 12,
+                              height: 12,
+                              borderRadius: "50%",
+                              background: "var(--theme-accent)"
+                            }}
+                          />
+                          <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--theme-text)" }}>
+                            {reason}
+                          </h3>
+                          <span
+                            style={{
+                              marginLeft: "auto",
+                              background: "var(--theme-accent)",
+                              color: "white",
+                              padding: "4px 8px",
+                              borderRadius: 4,
+                              fontSize: 12,
+                              fontWeight: 700
+                            }}
+                          >
+                            {complaints.length} case{complaints.length !== 1 ? "s" : ""}
+                          </span>
+                        </div>
+                        <div style={{ display: "grid", gap: 8 }}>
+                          {complaints.map((complaint) => (
+                            <button
+                              key={complaint.id}
+                              onClick={() => setActiveComplaintId(complaint.id)}
+                              style={{
+                                all: "unset",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                padding: 12,
+                                background: "var(--theme-light)",
+                                border: "1px solid #e5e7eb",
+                                borderRadius: 6,
+                                cursor: "pointer",
+                                transition: "all 0.2s"
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.background = "#f9fafb";
+                                e.currentTarget.style.borderColor = "var(--theme-accent)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = "var(--theme-light)";
+                                e.currentTarget.style.borderColor = "#e5e7eb";
+                              }}
+                            >
+                              <div style={{ textAlign: "left" }}>
+                                <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "var(--theme-text)" }}>
+                                  {complaint.id}
+                                </p>
+                                <p style={{ margin: "4px 0 0 0", fontSize: 11, color: "var(--theme-text)", opacity: 0.7 }}>
+                                  Type: {complaint.complaintType || "General"}
+                                </p>
+                              </div>
+                              <div style={{ textAlign: "right" }}>
+                                <span
+                                  style={{
+                                    background: "#FEF3C7",
+                                    color: "#92400E",
+                                    padding: "4px 8px",
+                                    borderRadius: 4,
+                                    fontSize: 11,
+                                    fontWeight: 600
+                                  }}
+                                >
+                                  Pending
+                                </span>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null;
+            })()}
           </div>
         )}
 
