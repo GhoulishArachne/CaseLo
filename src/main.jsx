@@ -2787,20 +2787,70 @@ function OfficerProfileView({ data, officerProfiles, selectedOfficerId, setSelec
         {/* Officer Profile Details */}
         {profile ? (
           <div style={{ overflow: "auto" }}>
-            {/* Profile Header */}
-            <div style={{ background: "#ffffff", border: "1px solid #dce4e1", borderRadius: 8, padding: 20, marginBottom: 16 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: 20 }}>
-                <div>
-                  <h2 style={{ margin: "0 0 8px", fontSize: 28 }}>{profile.officer.name}</h2>
-                  <p style={{ margin: 0, color: "#5a6b66" }}>
-                    {profile.officer.rank} • Badge #{profile.officer.badgeNumber || "—"}
-                  </p>
-                  <p style={{ margin: "8px 0 0", color: "#60716c" }}>
-                    {profile.officer.assignment || "Unassigned"} · {profile.officer.division || "—"}
-                  </p>
-                  <p style={{ margin: "4px 0 0", color: "#60716c" }}>Supervisor: {profile.officer.supervisorName || "—"}</p>
+            {/* Edit Officer Info Form */}
+            <div style={{ background: "#ffffff", border: "1px solid #dce4e1", borderRadius: 8, padding: 16, marginBottom: 16 }}>
+              <h3 style={{ margin: "0 0 16px" }}>Officer Information</h3>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const fd = new FormData(e.currentTarget);
+                  editPerson(profile.officer.id, {
+                    rank: fd.get("rank").toString(),
+                    badgeNumber: fd.get("badgeNumber").toString(),
+                    assignment: fd.get("assignment").toString(),
+                    division: fd.get("division").toString(),
+                    supervisorName: fd.get("supervisorName").toString(),
+                    contact: fd.get("contact").toString(),
+                  });
+                  alert("Officer information updated!");
+                }}
+                style={{ display: "grid", gap: 12 }}
+              >
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>Rank</label>
+                    <select name="rank" defaultValue={profile.officer.rank || ""} style={{ width: "100%" }}>
+                      <option value="">Select Rank</option>
+                      <option value="Chief of Police">Chief of Police</option>
+                      <option value="Deputy Chief">Deputy Chief</option>
+                      <option value="Commander">Commander</option>
+                      <option value="Captain">Captain</option>
+                      <option value="Lieutenant">Lieutenant</option>
+                      <option value="Sergeant">Sergeant</option>
+                      <option value="Corporal">Corporal</option>
+                      <option value="Officer">Officer</option>
+                      <option value="Cadet">Cadet</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>Badge #</label>
+                    <input name="badgeNumber" type="text" defaultValue={profile.officer.badgeNumber || ""} placeholder="e.g., 201" style={{ width: "100%" }} />
+                  </div>
                 </div>
-              </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>Assignment</label>
+                    <input name="assignment" type="text" defaultValue={profile.officer.assignment || ""} placeholder="e.g., Patrol Division" style={{ width: "100%" }} />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>Division</label>
+                    <input name="division" type="text" defaultValue={profile.officer.division || ""} placeholder="e.g., Special Operations" style={{ width: "100%" }} />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>Supervisor Name</label>
+                  <input name="supervisorName" type="text" defaultValue={profile.officer.supervisorName || ""} placeholder="e.g., Captain John Smith" style={{ width: "100%" }} />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>Contact Info</label>
+                  <input name="contact" type="text" defaultValue={profile.officer.contact || ""} placeholder="e.g., phone, email, or address" style={{ width: "100%" }} />
+                </div>
+
+                <button type="submit" className="primary" style={{ width: "100%" }}>Save Officer Information</button>
+              </form>
             </div>
 
             {/* Metrics Grid */}
