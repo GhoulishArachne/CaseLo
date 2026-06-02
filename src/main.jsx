@@ -1941,8 +1941,21 @@ function createPerson(event) {
 
       <section className="workspace">
         <header className="topbar">
-          <div>
-            <p>Investigation Control</p>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            {themeColors[themeIndex]?.departmentLogoUrl && (
+              <img
+                src={themeColors[themeIndex].departmentLogoUrl}
+                alt="Department Logo"
+                style={{ height: 40, width: "auto", borderRadius: 4 }}
+                onError={() => {}}
+              />
+            )}
+            <div>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--theme-dark)" }}>
+                {themeColors[themeIndex]?.departmentName || "Police Department"}
+              </p>
+              <p style={{ margin: "4px 0 0 0", fontSize: 12, color: "#60716c" }}>Investigation Control</p>
+            </div>
           </div>
           <div className="searchbox">
             <Search size={18} />
