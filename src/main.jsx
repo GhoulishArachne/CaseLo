@@ -3126,6 +3126,37 @@ function OfficerProfileView({ data, officerProfiles, selectedOfficerId, setSelec
 }
 
 function ViolationLibraryPanel({ violations, onEdit, onDelete }) {
+  // Get code prefix from category (Cond, Int, Perf, etc.)
+  function getCategoryPrefix(category) {
+    const prefixes = {
+      "Conduct": "Cond",
+      "Integrity": "Int",
+      "Performance": "Perf",
+      "Use of Force": "UoF",
+      "Professionalism": "Prof",
+      "Other": "Misc",
+    };
+    return prefixes[category] || category.substring(0, 3);
+  }
+
+  // Generate sequential codes by category
+  const violationsWithCodes = violations.map((v, idx) => {
+    const category = v.category || v.category;
+    const prefix = getCategoryPrefix(category);
+
+    // Count how many violations with this prefix come before this one
+    const sequentialNum = violations
+      .slice(0, idx + 1)
+      .filter((prev) => getCategoryPrefix(prev.category) === prefix).length;
+
+    const displayCode = `${prefix}-${sequentialNum}`;
+
+    return {
+      ...v,
+      displayCode,
+    };
+  });
+
   return (
     <div className="panel" style={{ padding: 16 }}>
       <h3 style={{ margin: "0 0 16px" }}>Offense Library</h3>
@@ -3142,13 +3173,13 @@ function ViolationLibraryPanel({ violations, onEdit, onDelete }) {
             </tr>
           </thead>
           <tbody>
-            {violations.map((v) => (
+            {violationsWithCodes.map((v) => (
               <tr key={v.id} style={{ borderBottom: "1px solid #edf1ef" }}>
-                <td style={{ padding: "12px 0", fontWeight: 700, color: "#2f7f67" }}>{v.id}</td>
-                <td style={{ padding: "12px 0" }}>{v.name}</td>
+                <td style={{ padding: "12px 0", fontWeight: 700, color: "#2f7f67" }}>{v.displayCode}</td>
+                <td style={{ padding: "12px 0" }}>{v.title || v.name}</td>
                 <td style={{ padding: "12px 0" }}>{v.category}</td>
-                <td style={{ padding: "12px 0" }}>{v.severityLevel}</td>
-                <td style={{ padding: "12px 0" }}>{v.defaultDisciplineTemplate}</td>
+                <td style={{ padding: "12px 0" }}>{v.severity || v.severityLevel}</td>
+                <td style={{ padding: "12px 0" }}>{v.discipline_recommendations || v.defaultDisciplineTemplate}</td>
                 <td style={{ padding: "12px 0", textAlign: "center" }}>
                   <button
                     onClick={() => onEdit(v.id)}
@@ -3187,7 +3218,30 @@ function ViolationLibraryPanel({ violations, onEdit, onDelete }) {
   );
 }
 
-function ViolationForm({ violation, onSubmit, onCancel }) {
+function ViolationForm({ violation, onSubmit, onCancel, allViolations = [] }) {
+  function getCategoryPrefix(category) {
+    const prefixes = {
+      "Conduct": "Cond",
+      "Integrity": "Int",
+      "Performance": "Perf",
+      "Use of Force": "UoF",
+      "Professionalism": "Prof",
+      "Other": "Misc",
+    };
+    return prefixes[category] || (category || "").substring(0, 3);
+  }
+
+  function getSequentialCode(v, violations) {
+    const category = v.category || v.category;
+    const prefix = getCategoryPrefix(category);
+    const sequentialNum = violations
+      .filter((prev) => getCategoryPrefix(prev.category) === prefix)
+      .indexOf(v) + 1;
+    return `${prefix}-${sequentialNum}`;
+  }
+
+  const displayCode = violation ? getSequentialCode(violation, allViolations) : "Auto-generated";
+
   return (
     <div className="panel" style={{ padding: 16 }}>
       <h3 style={{ margin: "0 0 16px" }}>
@@ -3202,11 +3256,11 @@ function ViolationForm({ violation, onSubmit, onCancel }) {
       >
         <div>
           <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
-            Code {violation && `(${violation.id})`}
+            Code
           </label>
           <input
             name="code"
-            defaultValue={violation?.id || ""}
+            defaultValue={displayCode}
             placeholder="Auto-generated"
             disabled
             style={{ background: "#f6f9f7", color: "#999" }}
@@ -4207,11 +4261,12 @@ function SettingsView({ themeIndex, setThemeIndex, data, setData, createViolatio
             violation={editingViolation}
             onSubmit={handleSubmitViolation}
             onCancel={() => setEditingViolation(null)}
+            allViolations={data.violations}
           />
         )}
 
         {!editingViolation && (
-          <ViolationForm onSubmit={createViolation} />
+          <ViolationForm onSubmit={createViolation} allViolations={data.violations} />
         )}
       </div>
     </section>
