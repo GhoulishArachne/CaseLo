@@ -748,6 +748,21 @@ function App() {
             }
           }
 
+          // If it's an array, parse each element if it's a string
+          if (Array.isArray(brandingArray)) {
+            brandingArray = brandingArray.map((item) => {
+              if (typeof item === "string") {
+                try {
+                  return JSON.parse(item);
+                } catch (e) {
+                  console.error("Failed to parse branding item:", item, e);
+                  return item;
+                }
+              }
+              return item;
+            });
+          }
+
           console.log("Parsed branding array:", brandingArray);
 
           if (Array.isArray(brandingArray) && brandingArray.length > themeIndex) {
