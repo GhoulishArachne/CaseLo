@@ -1497,7 +1497,9 @@ async function createPerson(event) {
       };
 
       save(next);
-      event.currentTarget.reset();
+      if (event.currentTarget) {
+        event.currentTarget.reset();
+      }
     } catch (error) {
       console.error("Failed to create person:", error);
       alert("Failed to add person. Please try again.");
