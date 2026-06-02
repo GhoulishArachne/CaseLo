@@ -3681,7 +3681,7 @@ function BrandingSettingsPanel({ themeIndex, themeColors, setThemeIndex }) {
             Department Logo URL
           </label>
           <input
-            type="url"
+            type="text"
             value={currentTheme.departmentLogoUrl}
             onChange={(e) => handleBrandingChange("departmentLogoUrl", e.target.value)}
             placeholder="https://example.com/logo.png"
