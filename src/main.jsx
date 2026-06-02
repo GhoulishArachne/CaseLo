@@ -46,6 +46,12 @@ const caseStatuses = [
   "Archived",
 ];
 
+const rankOrder = ["Chief of Police", "Deputy Chief", "Commander", "Captain", "Lieutenant", "Sergeant", "Corporal", "Officer", "Cadet"];
+
+function getRankIndex(rank) {
+  return rankOrder.indexOf(rank || "") === -1 ? rankOrder.length : rankOrder.indexOf(rank);
+}
+
 function nextCaseNumber(cases) {
   const year = new Date().getFullYear();
   const currentYearNumbers = cases
@@ -539,6 +545,16 @@ function createPerson(event) {
     event.currentTarget.reset();
   }
 
+  function editPerson(personId, updates) {
+    const next = {
+      ...data,
+      people: data.people.map((p) =>
+        p.id !== personId ? p : { ...p, ...updates }
+      ),
+    };
+    save(next);
+  }
+
   function addItem(event) {
     event.preventDefault();
     if (!activeCase) return;
@@ -867,7 +883,7 @@ function createPerson(event) {
         )}
 
         {activeView === "Evidence" && <CollectionView title="Evidence" icon={Fingerprint} items={visibleRecords.evidence} render={EvidenceItem} />}
-        {activeView === "People" && <PeopleView data={data} visiblePeople={visibleRecords.people} createPerson={createPerson} earlyInterventionByEmployeeId={earlyInterventionByEmployeeId} />}
+        {activeView === "People" && <PeopleView data={data} visiblePeople={visibleRecords.people} createPerson={createPerson} editPerson={editPerson} earlyInterventionByEmployeeId={earlyInterventionByEmployeeId} />}
         {activeView === "Complaints" && <ComplaintsView data={data} activeCase={activeCase} visibleComplaints={visibleRecords.complaints} createComplaint={submitComplaint} setActiveComplaintId={setActiveComplaintId} />}
 
 
@@ -1443,7 +1459,56 @@ function PersonItem(item) {
   );
 }
 
-function PeopleView({ data, visiblePeople, createPerson, earlyInterventionByEmployeeId }) {
+function PersonEditPanel({ person, editPerson }) {
+  if (!person) return null;
+  return (
+    <div className="panel" style={{ padding: 16, marginTop: 16 }}>
+      <div className="panel-head compact" style={{ marginTop: 0 }}>
+        <h2>Edit {person.name}</h2>
+      </div>
+      <div className="row" style={{ marginTop: 10 }}>
+        <select
+          value={person.rank || ""}
+          onChange={(e) => editPerson(person.id, { rank: e.target.value })}
+        >
+          <option value="">Select rank...</option>
+          {rankOrder.map((r) => (
+            <option key={r} value={r}>{r}</option>
+          ))}
+        </select>
+        <input
+          value={person.badgeNumber || ""}
+          onChange={(e) => editPerson(person.id, { badgeNumber: e.target.value })}
+          placeholder="Badge number"
+        />
+      </div>
+      <div className="row" style={{ marginTop: 10 }}>
+        <input
+          value={person.assignment || ""}
+          onChange={(e) => editPerson(person.id, { assignment: e.target.value })}
+          placeholder="Assignment"
+        />
+        <input
+          value={person.division || ""}
+          onChange={(e) => editPerson(person.id, { division: e.target.value })}
+          placeholder="Division"
+        />
+      </div>
+      <div className="row" style={{ marginTop: 10 }}>
+        <input
+          value={person.supervisorName || ""}
+          onChange={(e) => editPerson(person.id, { supervisorName: e.target.value })}
+          placeholder="Supervisor name"
+        />
+      </div>
+    </div>
+  );
+}
+
+function PeopleView({ data, visiblePeople, createPerson, editPerson, earlyInterventionByEmployeeId }) {
+  const [selectedPersonId, setSelectedPersonId] = useState(null);
+  const sortedPeople = visiblePeople.slice().sort((a, b) => getRankIndex(a.rank) - getRankIndex(b.rank));
+  const selectedPerson = data.people.find((p) => p.id === selectedPersonId);
   return (
     <section className="collection-view">
       <div className="collection-head">
@@ -1480,10 +1545,22 @@ function PeopleView({ data, visiblePeople, createPerson, earlyInterventionByEmpl
         </div>
 
         <div className="collection-list" style={{ marginTop: 12 }}>
-          {visiblePeople.length ? (
-            visiblePeople.map((item) => (
+          {sortedPeople.length ? (
+            sortedPeople.map((item) => (
               <React.Fragment key={item.id}>
-                <div style={{ paddingBottom: 12, borderBottom: "1px solid #edf1ef", marginBottom: 12 }}>
+                <button
+                  onClick={() => setSelectedPersonId(item.id)}
+                  style={{
+                    all: "unset",
+                    display: "block",
+                    width: "100%",
+                    paddingBottom: 12,
+                    borderBottom: "1px solid #edf1ef",
+                    marginBottom: 12,
+                    cursor: "pointer",
+                    textAlign: "left",
+                  }}
+                >
                   <PersonItem {...item} />
                   {earlyInterventionByEmployeeId?.[item.id]?.flags?.length ? (
                     <div style={{ marginTop: 10, display: "grid", gap: 8 }}>
@@ -1507,13 +1584,15 @@ function PeopleView({ data, visiblePeople, createPerson, earlyInterventionByEmpl
                   ) : (
                     <small style={{ color: "#687872" }}>No early intervention flags</small>
                   )}
-                </div>
+                </button>
               </React.Fragment>
             ))
           ) : (
             <p className="empty">No employees found.</p>
           )}
         </div>
+
+        <PersonEditPanel person={selectedPerson} editPerson={editPerson} />
       </div>
     </section>
   );
