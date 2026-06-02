@@ -18,6 +18,7 @@ import {
   Search,
   ShieldCheck,
   Tag,
+  Trash2,
   UserRound,
 } from "lucide-react";
 import "./styles.css";
@@ -321,6 +322,16 @@ function App() {
     save(next);
     setActiveCaseId(id);
     event.currentTarget.reset();
+  }
+
+  function deleteCase(caseId) {
+    if (!window.confirm(`Delete case ${caseId}? This action cannot be undone.`)) return;
+    const next = {
+      ...data,
+      cases: data.cases.filter((c) => c.id !== caseId),
+    };
+    save(next);
+    setActiveCaseId(null);
   }
 
   function parseCsv(text) {
@@ -1078,7 +1089,7 @@ function createPerson(event) {
             <MetricGrid metrics={metrics} />
             <section className="grid">
               <CaseList activeCase={activeCase} caseFilter={caseFilter} filteredCases={filteredCases} setActiveCaseId={setActiveCaseId} setCaseFilter={setCaseFilter} />
-              <CaseDetail activeCase={activeCase} caseRecords={caseRecords} data={data} setData={setData} editFinding={editFinding} />
+              <CaseDetail activeCase={activeCase} caseRecords={caseRecords} data={data} setData={setData} editFinding={editFinding} deleteCase={deleteCase} />
               <Forms activeCase={activeCase} addItem={addItem} createCase={createCase} quickAdd={quickAdd} setQuickAdd={setQuickAdd} />
             </section>
           </>
@@ -1087,7 +1098,7 @@ function createPerson(event) {
         {activeView === "Cases" && (
           <section className="single-grid">
             <CaseList activeCase={activeCase} caseFilter={caseFilter} filteredCases={filteredCases} setActiveCaseId={setActiveCaseId} setCaseFilter={setCaseFilter} />
-            <CaseDetail activeCase={activeCase} caseRecords={caseRecords} data={data} setData={setData} editFinding={editFinding} />
+            <CaseDetail activeCase={activeCase} caseRecords={caseRecords} data={data} setData={setData} editFinding={editFinding} deleteCase={deleteCase} />
             <Forms activeCase={activeCase} addItem={addItem} createCase={createCase} quickAdd={quickAdd} setQuickAdd={setQuickAdd} />
           </section>
         )}
@@ -1406,7 +1417,7 @@ function LinkSection({
   );
 }
 
-function CaseDetail({ activeCase, caseRecords, data, setData, editFinding }) {
+function CaseDetail({ activeCase, caseRecords, data, setData, editFinding, deleteCase }) {
   return (
     <section className="case-detail">
       {activeCase ? (
@@ -1417,11 +1428,33 @@ function CaseDetail({ activeCase, caseRecords, data, setData, editFinding }) {
               <h2>{activeCase.title}</h2>
               <p>{activeCase.summary}</p>
             </div>
-            <div className="status-strip">
-              <Pill value={activeCase.status} />
-              <Pill value={activeCase.priority} />
-              <Pill value={activeCase.classification} />
-              <Pill value={activeCase.investigationType} />
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "flex-end" }}>
+              <div className="status-strip">
+                <Pill value={activeCase.status} />
+                <Pill value={activeCase.priority} />
+                <Pill value={activeCase.classification} />
+                <Pill value={activeCase.investigationType} />
+              </div>
+              <button
+                type="button"
+                onClick={() => deleteCase(activeCase.id)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  border: 0,
+                  background: "#fee5e3",
+                  color: "#b6492b",
+                  borderRadius: 6,
+                  padding: "8px 12px",
+                  cursor: "pointer",
+                  fontWeight: 700,
+                  fontSize: 13,
+                }}
+              >
+                <Trash2 size={16} />
+                Delete
+              </button>
             </div>
           </div>
 
