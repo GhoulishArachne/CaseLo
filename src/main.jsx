@@ -3944,46 +3944,100 @@ function CustomDropdownManager({ data, onUpdateDropdown, onAddOption, onRemoveOp
 }
 
 function BrandingSettingsPanel({ themeIndex, themeColors, setThemeIndex }) {
-  const [, forceUpdate] = useState(0);
-  const currentTheme = themeColors[themeIndex];
+  const [pendingChanges, setPendingChanges] = useState({ ...themeColors[themeIndex] });
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
 
-  async function handleBrandingChange(field, value) {
-    const updated = [...themeColors];
-    updated[themeIndex] = {
-      ...currentTheme,
+  function handleBrandingChange(field, value) {
+    setPendingChanges((prev) => ({
+      ...prev,
       [field]: value,
-    };
-    // Update the themeColors array
-    themeColors.splice(0, themeColors.length, ...updated);
-    localStorage.setItem("theme-index", themeIndex.toString());
+    }));
+  }
 
-    // Save to Supabase
+  async function handleSave() {
+    setSaving(true);
+    setSaveMessage("");
+
     try {
+      const updated = [...themeColors];
+      updated[themeIndex] = pendingChanges;
+
+      // Update the themeColors array
+      themeColors.splice(0, themeColors.length, ...updated);
+      localStorage.setItem("theme-index", themeIndex.toString());
+
+      // Save to Supabase
       await customOptionsService.updateByCategory("branding", updated);
+
+      // Apply CSS variables
+      if (pendingChanges.dark)
+        document.documentElement.style.setProperty("--theme-dark", pendingChanges.dark);
+      if (pendingChanges.accent)
+        document.documentElement.style.setProperty("--theme-accent", pendingChanges.accent);
+      if (pendingChanges.departmentName)
+        document.documentElement.style.setProperty("--dept-name", pendingChanges.departmentName);
+      if (pendingChanges.departmentLogoUrl)
+        document.documentElement.style.setProperty(
+          "--dept-logo-url",
+          pendingChanges.departmentLogoUrl ? `url('${pendingChanges.departmentLogoUrl}')` : "none"
+        );
+      if (pendingChanges.reportHeaderText)
+        document.documentElement.style.setProperty("--report-header", pendingChanges.reportHeaderText);
+      if (pendingChanges.signatureBlockText)
+        document.documentElement.style.setProperty("--signature-block", pendingChanges.signatureBlockText);
+      if (pendingChanges.accentSecondaryColor)
+        document.documentElement.style.setProperty("--secondary-accent", pendingChanges.accentSecondaryColor);
+
+      setSaveMessage("✓ Branding saved successfully");
+      setTimeout(() => setSaveMessage(""), 3000);
     } catch (error) {
       console.error("Failed to save branding:", error);
+      setSaveMessage("✗ Failed to save branding");
+    } finally {
+      setSaving(false);
     }
-
-    // Apply CSS variables immediately
-    if (field === "departmentName") {
-      document.documentElement.style.setProperty("--dept-name", value);
-    } else if (field === "departmentLogoUrl") {
-      document.documentElement.style.setProperty("--dept-logo-url", value ? `url('${value}')` : "none");
-    } else if (field === "reportHeaderText") {
-      document.documentElement.style.setProperty("--report-header", value);
-    } else if (field === "signatureBlockText") {
-      document.documentElement.style.setProperty("--signature-block", value);
-    } else if (field === "accentSecondaryColor") {
-      document.documentElement.style.setProperty("--secondary-accent", value);
-    }
-
-    // Trigger re-render
-    forceUpdate(prev => prev + 1);
   }
 
   return (
     <div className="panel" style={{ padding: 16 }}>
-      <h3 style={{ margin: "0 0 16px" }}>System Branding</h3>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <h3 style={{ margin: 0 }}>System Branding</h3>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          style={{
+            background: "#2f7f67",
+            color: "white",
+            border: "none",
+            padding: "8px 16px",
+            borderRadius: 6,
+            fontWeight: 700,
+            fontSize: 13,
+            cursor: saving ? "not-allowed" : "pointer",
+            opacity: saving ? 0.6 : 1,
+          }}
+        >
+          {saving ? "Saving..." : "Save Branding"}
+        </button>
+      </div>
+
+      {saveMessage && (
+        <div
+          style={{
+            padding: 12,
+            marginBottom: 16,
+            borderRadius: 6,
+            fontSize: 13,
+            fontWeight: 600,
+            background: saveMessage.includes("✓") ? "#e8f5e9" : "#ffebee",
+            color: saveMessage.includes("✓") ? "#2e7d32" : "#c62828",
+          }}
+        >
+          {saveMessage}
+        </div>
+      )}
+
       <div style={{ display: "grid", gap: 16 }}>
         <div>
           <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "#60716c", textTransform: "uppercase" }}>
@@ -3991,7 +4045,7 @@ function BrandingSettingsPanel({ themeIndex, themeColors, setThemeIndex }) {
           </label>
           <input
             type="text"
-            value={currentTheme.departmentName}
+            value={pendingChanges.departmentName}
             onChange={(e) => handleBrandingChange("departmentName", e.target.value)}
             placeholder="e.g., San Santos Police Department"
           />
@@ -4003,15 +4057,15 @@ function BrandingSettingsPanel({ themeIndex, themeColors, setThemeIndex }) {
           </label>
           <input
             type="text"
-            value={currentTheme.departmentLogoUrl}
+            value={pendingChanges.departmentLogoUrl}
             onChange={(e) => handleBrandingChange("departmentLogoUrl", e.target.value)}
             placeholder="https://example.com/logo.png"
           />
-          {currentTheme.departmentLogoUrl && (
+          {pendingChanges.departmentLogoUrl && (
             <div style={{ marginTop: 8, padding: 8, background: "#f6f9f7", borderRadius: 6 }}>
               <small style={{ color: "#60716c" }}>Logo Preview:</small>
               <img
-                src={currentTheme.departmentLogoUrl}
+                src={pendingChanges.departmentLogoUrl}
                 alt="Department Logo"
                 style={{ maxHeight: 60, marginTop: 4, borderRadius: 4 }}
                 onError={() => {}}
@@ -4026,7 +4080,7 @@ function BrandingSettingsPanel({ themeIndex, themeColors, setThemeIndex }) {
           </label>
           <input
             type="text"
-            value={currentTheme.reportHeaderText}
+            value={pendingChanges.reportHeaderText}
             onChange={(e) => handleBrandingChange("reportHeaderText", e.target.value)}
             placeholder="e.g., Internal Affairs Division"
           />
@@ -4038,7 +4092,7 @@ function BrandingSettingsPanel({ themeIndex, themeColors, setThemeIndex }) {
           </label>
           <input
             type="text"
-            value={currentTheme.signatureBlockText}
+            value={pendingChanges.signatureBlockText}
             onChange={(e) => handleBrandingChange("signatureBlockText", e.target.value)}
             placeholder="e.g., Authorized by: "
           />
@@ -4051,13 +4105,13 @@ function BrandingSettingsPanel({ themeIndex, themeColors, setThemeIndex }) {
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <input
               type="color"
-              value={currentTheme.accentSecondaryColor}
+              value={pendingChanges.accentSecondaryColor}
               onChange={(e) => handleBrandingChange("accentSecondaryColor", e.target.value)}
               style={{ width: 60, height: 44, border: "1px solid #dce4e1", borderRadius: 6, cursor: "pointer" }}
             />
             <input
               type="text"
-              value={currentTheme.accentSecondaryColor}
+              value={pendingChanges.accentSecondaryColor}
               onChange={(e) => handleBrandingChange("accentSecondaryColor", e.target.value)}
               placeholder="#2f7f67"
               style={{ flex: 1 }}
@@ -4068,13 +4122,13 @@ function BrandingSettingsPanel({ themeIndex, themeColors, setThemeIndex }) {
         <div style={{ padding: 12, background: "#eef5f1", borderRadius: 6, borderLeft: "4px solid var(--theme-accent)" }}>
           <strong style={{ fontSize: 13 }}>Preview</strong>
           <div style={{ marginTop: 12, fontSize: 13, color: "#42524e" }}>
-            {currentTheme.departmentLogoUrl && (
-              <img src={currentTheme.departmentLogoUrl} alt="Logo" style={{ maxHeight: 40, marginBottom: 8 }} />
+            {pendingChanges.departmentLogoUrl && (
+              <img src={pendingChanges.departmentLogoUrl} alt="Logo" style={{ maxHeight: 40, marginBottom: 8 }} />
             )}
-            <div style={{ fontWeight: 700, marginBottom: 4 }}>{currentTheme.departmentName}</div>
-            <div style={{ color: "#60716c", marginBottom: 4 }}>{currentTheme.reportHeaderText}</div>
+            <div style={{ fontWeight: 700, marginBottom: 4 }}>{pendingChanges.departmentName}</div>
+            <div style={{ color: "#60716c", marginBottom: 4 }}>{pendingChanges.reportHeaderText}</div>
             <div style={{ borderTop: "1px solid #dce4e1", paddingTop: 8, marginTop: 8 }}>
-              {currentTheme.signatureBlockText}_________________
+              {pendingChanges.signatureBlockText}_________________
             </div>
           </div>
         </div>
