@@ -502,8 +502,6 @@ function normalizeData(data) {
       intakeStage: item.intakeStage || (item.status === "Intake" ? "Intake" : "Submitted"),
       supervisorReferral: item.supervisorReferral || {
         enabled: Boolean(item?.supervisorReferral?.enabled),
-        supervisorName: item?.supervisorReferral?.supervisorName || "",
-        supervisorId: item?.supervisorReferral?.supervisorId || "",
         referralReason: item?.supervisorReferral?.referralReason || "",
       },
 
@@ -1412,8 +1410,6 @@ function App() {
           // supervisor referral
           supervisorReferral: {
             enabled: Boolean(form.get("supervisorReferralEnabled")),
-            supervisorName: form.get("supervisorName")?.toString().trim() || "",
-            supervisorId: form.get("supervisorId")?.toString().trim() || "",
             referralReason: form.get("supervisorReferralReason")?.toString().trim() || "",
           },
 
@@ -4607,17 +4603,13 @@ function ComplaintsView({ data, activeCase, visibleComplaints, createComplaint, 
               <textarea name="evidenceNotes" placeholder="Evidence notes aligned by comma (optional)" />
             </div>
 
-            {/* Supervisor referral */}
-            <div style={{ marginTop: 10 }}>
-              <select name="supervisorReferralEnabled" defaultValue={"false"}>
-                <option value={"false"}>No supervisor referral</option>
-                <option value={"true"}>Supervisor referral</option>
-              </select>
-              <div className="row" style={{ marginTop: 10 }}>
-                <input name="supervisorName" placeholder="Supervisor name" />
-                <input name="supervisorId" placeholder="Supervisor ID" />
-              </div>
-              <textarea name="supervisorReferralReason" placeholder="Referral reason (optional)" />
+            {/* Escalate for supervisor review */}
+            <div style={{ marginTop: 10, display: "grid", gap: 8 }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                <input type="checkbox" name="supervisorReferralEnabled" />
+                <span>Escalate for supervisor review</span>
+              </label>
+              <textarea name="supervisorReferralReason" placeholder="Reason for escalation (optional)" />
             </div>
 
             {/* Involved personnel IDs (optional) */}
