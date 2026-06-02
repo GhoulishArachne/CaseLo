@@ -3960,7 +3960,17 @@ function CustomDropdownManager({ data, onUpdateDropdown, onAddOption, onRemoveOp
 }
 
 function BrandingSettingsPanel({ themeIndex, themeColors, setThemeIndex }) {
-  const [pendingChanges, setPendingChanges] = useState({ ...themeColors[themeIndex] });
+  const currentTheme = themeColors[themeIndex] || {};
+  const [pendingChanges, setPendingChanges] = useState({
+    name: currentTheme.name || "Default",
+    dark: currentTheme.dark || "#14201e",
+    accent: currentTheme.accent || "#2f7f67",
+    departmentName: currentTheme.departmentName || "Police Department",
+    departmentLogoUrl: currentTheme.departmentLogoUrl || "",
+    reportHeaderText: currentTheme.reportHeaderText || "",
+    signatureBlockText: currentTheme.signatureBlockText || "",
+    accentSecondaryColor: currentTheme.accentSecondaryColor || "#1e5c4a",
+  });
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
 
