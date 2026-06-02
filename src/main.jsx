@@ -892,7 +892,9 @@ function App() {
         ],
       };
       save(next);
-      event.currentTarget.reset();
+      if (event.currentTarget) {
+        event.currentTarget.reset();
+      }
     } catch (error) {
       console.error("Failed to create violation:", error);
       alert("Failed to create violation. Please try again.");
@@ -4009,7 +4011,9 @@ function SettingsView({ themeIndex, setThemeIndex, data, setData, createViolatio
     };
     await editViolation(editingViolation.id, updates);
     setEditingViolation(null);
-    e.currentTarget.reset();
+    if (e.currentTarget) {
+      e.currentTarget.reset();
+    }
   }
 
   function handleEditPolicy(policyId) {
