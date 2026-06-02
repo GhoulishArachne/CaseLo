@@ -656,11 +656,18 @@ function App() {
   // Load data from Supabase on mount
   useEffect(() => {
     const fetchData = async () => {
-      const loadedData = await loadDataFromSupabase();
-      setData(loadedData);
-      setActiveCaseId(loadedData.cases[0]?.id ?? "");
-      setActiveComplaintId(loadedData.complaints?.[0]?.id ?? "");
-      setLoading(false);
+      try {
+        const loadedData = await loadDataFromSupabase();
+        setData(loadedData);
+        setActiveCaseId(loadedData.cases?.[0]?.id ?? "");
+        setActiveComplaintId(loadedData.complaints?.[0]?.id ?? "");
+      } catch (error) {
+        console.error("Error loading data:", error);
+        // Use seedData as fallback
+        setData(seedData);
+      } finally {
+        setLoading(false);
+      }
     };
     fetchData();
   }, []);
@@ -1717,6 +1724,22 @@ function createPerson(event) {
       notes: data.notes.filter((item) => matches([item.id, item.title, item.body, item.tag, item.created, caseTitle(item.caseId)])),
     };
   }, [data, query]);
+
+  if (loading) {
+    return (
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "100vh",
+        background: "#f3f5f4",
+        fontSize: "16px",
+        color: "#5a6b66"
+      }}>
+        Loading cases...
+      </div>
+    );
+  }
 
   return (
     <main className="shell">
