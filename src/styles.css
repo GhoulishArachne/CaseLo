@@ -5,6 +5,11 @@
   font-synthesis: none;
   --theme-dark: #14201e;
   --theme-accent: #2f7f67;
+  --dept-name: "Police Department";
+  --dept-logo-url: none;
+  --report-header: "Internal Affairs Investigation";
+  --signature-block: "Authorized by: ";
+  --secondary-accent: #1a6b56;
 }
 
 * {

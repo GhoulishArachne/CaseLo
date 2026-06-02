@@ -100,6 +100,142 @@ const seedData = {
       notes: "",
     },
   ],
+  policies: [
+    {
+      id: "POL-001",
+      title: "Use of Force Policy",
+      description: "Standard guidelines for use of force incidents and authorized response protocols",
+      url: "https://example.com/policies/use-of-force.pdf",
+      linkedViolationIds: ["VC-005"],
+      category: "Use of Force",
+      version: "2.1",
+      effectiveDate: "2024-01-15",
+      documentSource: "Department Policy Manual",
+      notes: "Investigative reference - core policy for use of force violations",
+    },
+    {
+      id: "POL-002",
+      title: "Anti-Corruption Policy",
+      description: "Standards of conduct prohibiting corruption, bribery, and conflicts of interest",
+      url: "https://example.com/policies/anti-corruption.pdf",
+      linkedViolationIds: ["VC-003"],
+      category: "Corruption",
+      version: "1.8",
+      effectiveDate: "2023-06-01",
+      documentSource: "Department Policy Manual",
+      notes: "Investigative reference - primary policy for corruption investigations",
+    },
+    {
+      id: "POL-003",
+      title: "Pursuit Vehicles Policy",
+      description: "Guidelines for authorized vehicle pursuits and safety protocols",
+      url: "https://example.com/policies/pursuit-vehicles.pdf",
+      linkedViolationIds: [],
+      category: "Pursuit",
+      version: "3.0",
+      effectiveDate: "2024-02-01",
+      documentSource: "Department Operations Manual",
+      notes: "Reference for pursuit-related investigations and violations",
+    },
+    {
+      id: "POL-004",
+      title: "Harassment and Discrimination Prevention",
+      description: "Policy prohibiting harassment, discrimination, and unprofessional conduct",
+      url: "https://example.com/policies/harassment-prevention.pdf",
+      linkedViolationIds: ["VC-001"],
+      category: "Harassment",
+      version: "2.0",
+      effectiveDate: "2023-09-01",
+      documentSource: "HR Department Manual",
+      notes: "Reference for harassment and conduct unbecoming violations",
+    },
+  ],
+  investigationTemplates: [
+    {
+      id: "TMPL-001",
+      name: "Use of Force Investigation",
+      description: "Template for investigating excessive force allegations and related officer conduct",
+      category: "Use of Force",
+      investigationScope: "Examine circumstances of force incident, officer actions, subject behavior, injuries sustained, medical documentation, and compliance with use of force continuum",
+      keyQuestions: [
+        "Was the suspect armed or posed an immediate threat to officer safety?",
+        "Did the officer follow the established use of force continuum?",
+        "Was the level of force proportional to the threat presented?",
+        "Were there any alternative methods available that would have been appropriate?",
+        "Were verbal warnings given prior to use of force?"
+      ],
+      requiredEvidenceTypes: ["Body camera footage", "Dash camera footage", "Witness statements", "Medical reports", "Scene photographs", "Officer statement"],
+      linkedViolations: ["VC-005"],
+      linkedPolicies: ["POL-001"],
+      estimatedInvestigationDays: 14,
+      createdBy: "IA Command",
+      dateCreated: "2024-01-01",
+    },
+    {
+      id: "TMPL-002",
+      name: "Corruption Investigation",
+      description: "Template for investigating allegations of corruption, bribery, and illegal benefits",
+      category: "Corruption",
+      investigationScope: "Examine financial records, communications, relationships with known criminals or business entities, unauthorized benefits, quid pro quo arrangements, and conflict of interest matters",
+      keyQuestions: [
+        "Did the officer receive unauthorized benefits or payments?",
+        "Was there a quid pro quo agreement or understanding?",
+        "Did the officer solicit or encourage illegal payments?",
+        "Are there connections to criminal enterprises or suspicious persons?",
+        "Were assets acquired beyond what legitimate salary would provide?"
+      ],
+      requiredEvidenceTypes: ["Financial records", "Communications (email/text)", "Bank statements", "Witness testimony", "Surveillance footage", "Property records"],
+      linkedViolations: ["VC-003"],
+      linkedPolicies: ["POL-002"],
+      estimatedInvestigationDays: 30,
+      createdBy: "IA Command",
+      dateCreated: "2024-01-01",
+    },
+    {
+      id: "TMPL-003",
+      name: "Pursuit Violation Investigation",
+      description: "Template for investigating improper vehicle pursuit procedures and safety violations",
+      category: "Pursuit",
+      investigationScope: "Review pursuit authorization, adherence to pursuit policies, use of emergency equipment, driving behavior, public safety considerations, and supervisory oversight",
+      keyQuestions: [
+        "Was the pursuit authorized in accordance with policy?",
+        "Did the officer comply with speed and safety limitations?",
+        "Were emergency lights and sirens activated throughout pursuit?",
+        "Were supervisors adequately informed of pursuit status and location?",
+        "Did the pursuit endanger innocent civilians or officers?"
+      ],
+      requiredEvidenceTypes: ["Dispatch records", "Pursuit logs", "Dash/body camera footage", "Speed data", "Officer statements", "Civilian complaints"],
+      linkedViolations: [],
+      linkedPolicies: ["POL-003"],
+      estimatedInvestigationDays: 10,
+      createdBy: "IA Command",
+      dateCreated: "2024-01-01",
+    },
+    {
+      id: "TMPL-004",
+      name: "Harassment Investigation",
+      description: "Template for investigating harassment, discrimination, and hostile work environment allegations",
+      category: "Harassment",
+      investigationScope: "Document alleged conduct, interviews with complainant and witnesses, examination of communications, review of employment records, pattern analysis, and assessment of impact",
+      keyQuestions: [
+        "What specific conduct is alleged and when did it occur?",
+        "Were there any witnesses to the alleged harassment?",
+        "Has the complainant reported this previously?",
+        "Is there a pattern of similar complaints involving the accused officer?",
+        "What is the impact on the complainant's working conditions?"
+      ],
+      requiredEvidenceTypes: ["Complainant statement", "Witness statements", "Communications (emails, texts, messages)", "Work records", "Prior complaints", "Timeline documentation"],
+      linkedViolations: ["VC-001"],
+      linkedPolicies: ["POL-004"],
+      estimatedInvestigationDays: 14,
+      createdBy: "IA Command",
+      dateCreated: "2024-01-01",
+    },
+  ],
+  customOptions: {
+    priorityOptions: [],
+    investigationTypes: [],
+  },
 };
 
 const storeKey = "case-logger-data-v2";
@@ -119,12 +255,66 @@ const caseStatuses = [
 const rankOrder = ["Chief of Police", "Deputy Chief", "Commander", "Captain", "Lieutenant", "Sergeant", "Corporal", "Officer", "Cadet"];
 
 const themeColors = [
-  { name: "Forest", dark: "#14201e", accent: "#2f7f67" },
-  { name: "Ocean", dark: "#1a2b4a", accent: "#3b82f6" },
-  { name: "Amethyst", dark: "#3d1f47", accent: "#a855f7" },
-  { name: "Crimson", dark: "#4a1f1f", accent: "#ef4444" },
-  { name: "Slate", dark: "#1e293b", accent: "#64748b" },
-  { name: "Teal", dark: "#0f3f3f", accent: "#14b8a6" },
+  {
+    name: "Forest",
+    dark: "#14201e",
+    accent: "#2f7f67",
+    departmentName: "Police Department",
+    departmentLogoUrl: "",
+    reportHeaderText: "Internal Affairs Investigation",
+    signatureBlockText: "Authorized by: ",
+    accentSecondaryColor: "#1a6b56",
+  },
+  {
+    name: "Ocean",
+    dark: "#1a2b4a",
+    accent: "#3b82f6",
+    departmentName: "Police Department",
+    departmentLogoUrl: "",
+    reportHeaderText: "Internal Affairs Investigation",
+    signatureBlockText: "Authorized by: ",
+    accentSecondaryColor: "#1e40af",
+  },
+  {
+    name: "Amethyst",
+    dark: "#3d1f47",
+    accent: "#a855f7",
+    departmentName: "Police Department",
+    departmentLogoUrl: "",
+    reportHeaderText: "Internal Affairs Investigation",
+    signatureBlockText: "Authorized by: ",
+    accentSecondaryColor: "#7e22ce",
+  },
+  {
+    name: "Crimson",
+    dark: "#4a1f1f",
+    accent: "#ef4444",
+    departmentName: "Police Department",
+    departmentLogoUrl: "",
+    reportHeaderText: "Internal Affairs Investigation",
+    signatureBlockText: "Authorized by: ",
+    accentSecondaryColor: "#b91c1c",
+  },
+  {
+    name: "Slate",
+    dark: "#1e293b",
+    accent: "#64748b",
+    departmentName: "Police Department",
+    departmentLogoUrl: "",
+    reportHeaderText: "Internal Affairs Investigation",
+    signatureBlockText: "Authorized by: ",
+    accentSecondaryColor: "#334155",
+  },
+  {
+    name: "Teal",
+    dark: "#0f3f3f",
+    accent: "#14b8a6",
+    departmentName: "Police Department",
+    departmentLogoUrl: "",
+    reportHeaderText: "Internal Affairs Investigation",
+    signatureBlockText: "Authorized by: ",
+    accentSecondaryColor: "#0d9488",
+  },
 ];
 
 const findingTypes = ["Sustained", "Not Sustained", "Exonerated", "Unfounded", "Policy Failure"];
@@ -134,6 +324,15 @@ const severityLevels = ["None", "Low", "Medium", "High"];
 
 const violationCategories = ["Conduct", "Performance", "Integrity", "Safety", "Use of Force", "Other"];
 const violationSeverityLevels = ["Low", "Medium", "High", "Critical"];
+
+const policyCategories = ["Use of Force", "Corruption", "Pursuit", "Harassment", "Ethics", "Evidence", "Reports", "Other"];
+
+const investigationTemplateCategories = ["Use of Force", "Corruption", "Pursuit", "Harassment", "General", "Other"];
+
+const customizableDropdowns = [
+  { key: "priorityOptions", label: "Priority Levels", description: "Custom priority values for cases", hardcoded: ["Critical", "High", "Medium", "Low"] },
+  { key: "investigationTypes", label: "Investigation Types", description: "Custom investigation type categories", hardcoded: ["General", "Use of Force", "Corruption", "Pursuit", "Harassment"] },
+];
 
 function getRankIndex(rank) {
   return rankOrder.indexOf(rank || "") === -1 ? rankOrder.length : rankOrder.indexOf(rank);
@@ -297,6 +496,38 @@ function normalizeData(data) {
       defaultDisciplineTemplate: disciplineTemplates.includes(item.defaultDisciplineTemplate) ? item.defaultDisciplineTemplate : "None",
       notes: item.notes || "",
     })),
+    policies: (data.policies ?? []).map((item) => ({
+      ...item,
+      id: item.id || "",
+      title: item.title || "",
+      description: item.description || "",
+      url: item.url || "",
+      linkedViolationIds: Array.isArray(item.linkedViolationIds) ? item.linkedViolationIds : [],
+      category: policyCategories.includes(item.category) ? item.category : "Other",
+      version: item.version || "1.0",
+      effectiveDate: item.effectiveDate || "",
+      documentSource: item.documentSource || "",
+      notes: item.notes || "",
+    })),
+    investigationTemplates: (data.investigationTemplates ?? []).map((item) => ({
+      ...item,
+      id: item.id || "",
+      name: item.name || "",
+      description: item.description || "",
+      category: investigationTemplateCategories.includes(item.category) ? item.category : "General",
+      investigationScope: item.investigationScope || "",
+      keyQuestions: Array.isArray(item.keyQuestions) ? item.keyQuestions : [],
+      requiredEvidenceTypes: Array.isArray(item.requiredEvidenceTypes) ? item.requiredEvidenceTypes : [],
+      linkedViolations: Array.isArray(item.linkedViolations) ? item.linkedViolations : [],
+      linkedPolicies: Array.isArray(item.linkedPolicies) ? item.linkedPolicies : [],
+      estimatedInvestigationDays: item.estimatedInvestigationDays || 7,
+      createdBy: item.createdBy || "Admin",
+      dateCreated: item.dateCreated || "",
+    })),
+    customOptions: {
+      priorityOptions: Array.isArray(data.customOptions?.priorityOptions) ? data.customOptions.priorityOptions : [],
+      investigationTypes: Array.isArray(data.customOptions?.investigationTypes) ? data.customOptions.investigationTypes : [],
+    },
   };
 }
 
@@ -333,6 +564,11 @@ function App() {
     const theme = themeColors[themeIndex];
     document.documentElement.style.setProperty("--theme-dark", theme.dark);
     document.documentElement.style.setProperty("--theme-accent", theme.accent);
+    document.documentElement.style.setProperty("--dept-name", theme.departmentName);
+    document.documentElement.style.setProperty("--dept-logo-url", theme.departmentLogoUrl ? `url('${theme.departmentLogoUrl}')` : "none");
+    document.documentElement.style.setProperty("--report-header", theme.reportHeaderText);
+    document.documentElement.style.setProperty("--signature-block", theme.signatureBlockText);
+    document.documentElement.style.setProperty("--secondary-accent", theme.accentSecondaryColor);
     localStorage.setItem("theme-index", themeIndex.toString());
   }, [themeIndex]);
 
@@ -446,6 +682,177 @@ function App() {
       violations: data.violations.filter((v) => v.id !== violationId),
     };
     save(next);
+  }
+
+  function nextPolicyCode(policies) {
+    const numbers = policies
+      .map((item) => String(item.id).match(/^POL-(\d+)$/)?.[1])
+      .filter(Boolean)
+      .map(Number);
+    const next = numbers.length ? Math.max(...numbers) + 1 : 1;
+    return `POL-${String(next).padStart(3, "0")}`;
+  }
+
+  function createPolicy(event) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const title = form.get("title").toString().trim();
+    if (!title) return;
+
+    const id = nextPolicyCode(data.policies);
+    const next = {
+      ...data,
+      policies: [
+        {
+          id,
+          title,
+          description: form.get("description").toString().trim(),
+          url: form.get("url").toString().trim(),
+          linkedViolationIds: form
+            .get("linkedViolationIds")
+            .toString()
+            .split(",")
+            .map((x) => x.trim())
+            .filter(Boolean),
+          category: form.get("category") || "Other",
+          version: form.get("version").toString().trim() || "1.0",
+          effectiveDate: form.get("effectiveDate").toString(),
+          documentSource: form.get("documentSource").toString().trim(),
+          notes: form.get("notes").toString().trim(),
+        },
+        ...data.policies,
+      ],
+    };
+    save(next);
+    event.currentTarget.reset();
+  }
+
+  function editPolicy(policyId, updates) {
+    const next = {
+      ...data,
+      policies: data.policies.map((p) =>
+        p.id !== policyId ? p : { ...p, ...updates }
+      ),
+    };
+    save(next);
+  }
+
+  function deletePolicy(policyId) {
+    if (!window.confirm(`Delete policy ${policyId}? This action cannot be undone.`)) return;
+    const next = {
+      ...data,
+      policies: data.policies.filter((p) => p.id !== policyId),
+    };
+    save(next);
+  }
+
+  function nextTemplateCode(templates) {
+    const numbers = templates
+      .map((item) => String(item.id).match(/^TMPL-(\d+)$/)?.[1])
+      .filter(Boolean)
+      .map(Number);
+    const next = numbers.length ? Math.max(...numbers) + 1 : 1;
+    return `TMPL-${String(next).padStart(3, "0")}`;
+  }
+
+  function createTemplate(event) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const name = form.get("name").toString().trim();
+    if (!name) return;
+
+    const id = nextTemplateCode(data.investigationTemplates);
+    const keyQuestions = form
+      .get("keyQuestions")
+      .toString()
+      .split("\n")
+      .map((x) => x.trim())
+      .filter(Boolean);
+    const evidenceTypes = form
+      .get("requiredEvidenceTypes")
+      .toString()
+      .split("\n")
+      .map((x) => x.trim())
+      .filter(Boolean);
+
+    const next = {
+      ...data,
+      investigationTemplates: [
+        {
+          id,
+          name,
+          description: form.get("description").toString().trim(),
+          category: form.get("category") || "General",
+          investigationScope: form.get("investigationScope").toString().trim(),
+          keyQuestions,
+          requiredEvidenceTypes: evidenceTypes,
+          linkedViolations: form
+            .get("linkedViolations")
+            .toString()
+            .split(",")
+            .map((x) => x.trim())
+            .filter(Boolean),
+          linkedPolicies: form
+            .get("linkedPolicies")
+            .toString()
+            .split(",")
+            .map((x) => x.trim())
+            .filter(Boolean),
+          estimatedInvestigationDays: parseInt(form.get("estimatedInvestigationDays") || "7"),
+          createdBy: "IA Command",
+          dateCreated: new Date().toISOString().slice(0, 10),
+        },
+        ...data.investigationTemplates,
+      ],
+    };
+    save(next);
+    event.currentTarget.reset();
+  }
+
+  function editTemplate(templateId, updates) {
+    const next = {
+      ...data,
+      investigationTemplates: data.investigationTemplates.map((t) =>
+        t.id !== templateId ? t : { ...t, ...updates }
+      ),
+    };
+    save(next);
+  }
+
+  function deleteTemplate(templateId) {
+    if (!window.confirm(`Delete template ${templateId}? This action cannot be undone.`)) return;
+    const next = {
+      ...data,
+      investigationTemplates: data.investigationTemplates.filter((t) => t.id !== templateId),
+    };
+    save(next);
+  }
+
+  function updateCustomDropdown(dropdownKey, newOptions) {
+    const next = {
+      ...data,
+      customOptions: {
+        ...data.customOptions,
+        [dropdownKey]: newOptions,
+      },
+    };
+    save(next);
+  }
+
+  function addOptionToDropdown(dropdownKey, option) {
+    const trimmedOption = option.toString().trim();
+    if (!trimmedOption) return;
+    const current = data.customOptions[dropdownKey] || [];
+    if (current.includes(trimmedOption)) return;
+    updateCustomDropdown(dropdownKey, [...current, trimmedOption]);
+  }
+
+  function removeOptionFromDropdown(dropdownKey, option) {
+    const current = data.customOptions[dropdownKey] || [];
+    updateCustomDropdown(
+      dropdownKey,
+      current.filter((opt) => opt !== option)
+    );
   }
 
   function parseCsv(text) {
@@ -1236,6 +1643,12 @@ function createPerson(event) {
             createViolation={createViolation}
             editViolation={editViolation}
             deleteViolation={deleteViolation}
+            createPolicy={createPolicy}
+            editPolicy={editPolicy}
+            deletePolicy={deletePolicy}
+            createTemplate={createTemplate}
+            editTemplate={editTemplate}
+            deleteTemplate={deleteTemplate}
           />
         )}
 
@@ -2520,8 +2933,702 @@ function ViolationForm({ violation, onSubmit, onCancel }) {
   );
 }
 
-function SettingsView({ themeIndex, setThemeIndex, data, setData, createViolation, editViolation, deleteViolation }) {
+function PolicyLibraryPanel({ policies, onEdit, onDelete }) {
+  return (
+    <div className="panel" style={{ padding: 16 }}>
+      <h3 style={{ margin: "0 0 16px" }}>Department Policy Library</h3>
+      <div style={{ overflowX: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+          <thead>
+            <tr style={{ borderBottom: "2px solid #dce4e1" }}>
+              <th style={{ textAlign: "left", padding: "8px 0", fontWeight: 700, color: "#60716c" }}>Code</th>
+              <th style={{ textAlign: "left", padding: "8px 0", fontWeight: 700, color: "#60716c" }}>Title</th>
+              <th style={{ textAlign: "left", padding: "8px 0", fontWeight: 700, color: "#60716c" }}>Category</th>
+              <th style={{ textAlign: "left", padding: "8px 0", fontWeight: 700, color: "#60716c" }}>Version</th>
+              <th style={{ textAlign: "left", padding: "8px 0", fontWeight: 700, color: "#60716c" }}>Linked Violations</th>
+              <th style={{ textAlign: "center", padding: "8px 0", fontWeight: 700, color: "#60716c" }}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {policies.map((p) => (
+              <tr key={p.id} style={{ borderBottom: "1px solid #edf1ef" }}>
+                <td style={{ padding: "12px 0", fontWeight: 700, color: "#2f7f67" }}>{p.id}</td>
+                <td style={{ padding: "12px 0" }}>{p.title}</td>
+                <td style={{ padding: "12px 0" }}>{p.category}</td>
+                <td style={{ padding: "12px 0" }}>{p.version}</td>
+                <td style={{ padding: "12px 0", fontSize: 12 }}>
+                  {p.linkedViolationIds.length > 0 ? p.linkedViolationIds.join(", ") : "—"}
+                </td>
+                <td style={{ padding: "12px 0", textAlign: "center" }}>
+                  <button
+                    onClick={() => onEdit(p.id)}
+                    style={{
+                      background: "transparent",
+                      border: 0,
+                      color: "#2f7f67",
+                      cursor: "pointer",
+                      fontWeight: 700,
+                      fontSize: 13,
+                      marginRight: 12,
+                    }}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => onDelete(p.id)}
+                    style={{
+                      background: "transparent",
+                      border: 0,
+                      color: "#b6492b",
+                      cursor: "pointer",
+                      fontWeight: 700,
+                      fontSize: 13,
+                    }}
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function PolicyForm({ policy, onSubmit, onCancel, violations }) {
+  return (
+    <div className="panel" style={{ padding: 16 }}>
+      <h3 style={{ margin: "0 0 16px" }}>
+        {policy ? "Edit Policy" : "Create New Policy"}
+      </h3>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSubmit(e);
+        }}
+        style={{ display: "grid", gap: 10 }}
+      >
+        <div>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+            Code {policy && `(${policy.id})`}
+          </label>
+          <input
+            name="code"
+            defaultValue={policy?.id || ""}
+            placeholder="Auto-generated"
+            disabled
+            style={{ background: "#f6f9f7", color: "#999" }}
+          />
+        </div>
+        <div>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+            Title *
+          </label>
+          <input
+            name="title"
+            defaultValue={policy?.title || ""}
+            placeholder="e.g., Use of Force Policy"
+            required
+          />
+        </div>
+        <div>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+            Description
+          </label>
+          <textarea
+            name="description"
+            defaultValue={policy?.description || ""}
+            placeholder="Full description of policy"
+            style={{ minHeight: 86 }}
+          />
+        </div>
+        <div>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+            Policy URL
+          </label>
+          <input
+            name="url"
+            type="url"
+            defaultValue={policy?.url || ""}
+            placeholder="https://example.com/policies/policy.pdf"
+          />
+        </div>
+        <div className="row">
+          <div style={{ flex: 1 }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+              Category
+            </label>
+            <select name="category" defaultValue={policy?.category || "Other"}>
+              {policyCategories.map((cat) => (
+                <option key={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
+          <div style={{ flex: 1 }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+              Version
+            </label>
+            <input
+              name="version"
+              defaultValue={policy?.version || "1.0"}
+              placeholder="1.0"
+            />
+          </div>
+        </div>
+        <div>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+            Effective Date
+          </label>
+          <input
+            name="effectiveDate"
+            type="date"
+            defaultValue={policy?.effectiveDate || ""}
+          />
+        </div>
+        <div>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+            Document Source
+          </label>
+          <input
+            name="documentSource"
+            defaultValue={policy?.documentSource || ""}
+            placeholder="e.g., Department Policy Manual"
+          />
+        </div>
+        <div>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+            Linked Violations (comma-separated)
+          </label>
+          <input
+            name="linkedViolationIds"
+            defaultValue={policy?.linkedViolationIds?.join(", ") || ""}
+            placeholder="e.g., VC-001, VC-005"
+          />
+          <small style={{ color: "#60716c", display: "block", marginTop: 4 }}>Enter violation codes separated by commas</small>
+        </div>
+        <div>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+            Additional Notes
+          </label>
+          <textarea
+            name="notes"
+            defaultValue={policy?.notes || ""}
+            placeholder="Guidance or context for investigators"
+            style={{ minHeight: 60 }}
+          />
+        </div>
+        <div className="row" style={{ marginTop: 8 }}>
+          <button type="submit" className="primary">
+            {policy ? "Update Policy" : "Create Policy"}
+          </button>
+          {policy && (
+            <button type="button" onClick={onCancel} style={{ background: "#f6f9f7", border: "1px solid #dce4e1", borderRadius: 6, cursor: "pointer" }}>
+              Cancel
+            </button>
+          )}
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function TemplateLibraryPanel({ templates, onEdit, onDelete }) {
+  return (
+    <div className="panel" style={{ padding: 16 }}>
+      <h3 style={{ margin: "0 0 16px" }}>Investigation Templates</h3>
+      <div style={{ display: "grid", gap: 12 }}>
+        {templates.map((t) => (
+          <div key={t.id} style={{ border: "1px solid #dce4e1", borderRadius: 6, padding: 12 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 8 }}>
+              <div>
+                <strong style={{ fontSize: 14, color: "#17212b" }}>{t.name}</strong>
+                <small style={{ display: "block", color: "#2f7f67", fontWeight: 700 }}>{t.id}</small>
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  onClick={() => onEdit(t.id)}
+                  style={{
+                    background: "transparent",
+                    border: 0,
+                    color: "#2f7f67",
+                    cursor: "pointer",
+                    fontWeight: 700,
+                    fontSize: 13,
+                  }}
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => onDelete(t.id)}
+                  style={{
+                    background: "transparent",
+                    border: 0,
+                    color: "#b6492b",
+                    cursor: "pointer",
+                    fontWeight: 700,
+                    fontSize: 13,
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+            <small style={{ color: "#60716c", display: "block", marginBottom: 4 }}>
+              {t.category} · {t.estimatedInvestigationDays} days
+            </small>
+            {t.linkedViolations.length > 0 && (
+              <small style={{ color: "#2b584d", display: "block" }}>
+                Violations: {t.linkedViolations.join(", ")}
+              </small>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TemplateForm({ template, onSubmit, onCancel }) {
+  return (
+    <div className="panel" style={{ padding: 16 }}>
+      <h3 style={{ margin: "0 0 16px" }}>
+        {template ? "Edit Template" : "Create New Template"}
+      </h3>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSubmit(e);
+        }}
+        style={{ display: "grid", gap: 10 }}
+      >
+        <div>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+            Code {template && `(${template.id})`}
+          </label>
+          <input
+            name="code"
+            defaultValue={template?.id || ""}
+            placeholder="Auto-generated"
+            disabled
+            style={{ background: "#f6f9f7", color: "#999" }}
+          />
+        </div>
+        <div>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+            Template Name *
+          </label>
+          <input
+            name="name"
+            defaultValue={template?.name || ""}
+            placeholder="e.g., Use of Force Investigation"
+            required
+          />
+        </div>
+        <div>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+            Description
+          </label>
+          <textarea
+            name="description"
+            defaultValue={template?.description || ""}
+            placeholder="Overview of investigation type"
+            style={{ minHeight: 60 }}
+          />
+        </div>
+        <div className="row">
+          <div style={{ flex: 1 }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+              Category
+            </label>
+            <select name="category" defaultValue={template?.category || "General"}>
+              {investigationTemplateCategories.map((cat) => (
+                <option key={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
+          <div style={{ flex: 1 }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+              Estimated Days
+            </label>
+            <input
+              name="estimatedInvestigationDays"
+              type="number"
+              defaultValue={template?.estimatedInvestigationDays || "7"}
+              min="1"
+              max="180"
+            />
+          </div>
+        </div>
+        <div>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+            Investigation Scope
+          </label>
+          <textarea
+            name="investigationScope"
+            defaultValue={template?.investigationScope || ""}
+            placeholder="What aspects should be investigated"
+            style={{ minHeight: 80 }}
+          />
+        </div>
+        <div>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+            Key Questions (one per line)
+          </label>
+          <textarea
+            name="keyQuestions"
+            defaultValue={template?.keyQuestions?.join("\n") || ""}
+            placeholder="Question 1&#10;Question 2&#10;Question 3"
+            style={{ minHeight: 100 }}
+          />
+        </div>
+        <div>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+            Required Evidence Types (one per line)
+          </label>
+          <textarea
+            name="requiredEvidenceTypes"
+            defaultValue={template?.requiredEvidenceTypes?.join("\n") || ""}
+            placeholder="Evidence Type 1&#10;Evidence Type 2"
+            style={{ minHeight: 80 }}
+          />
+        </div>
+        <div className="row">
+          <div style={{ flex: 1 }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+              Linked Violations (comma-separated)
+            </label>
+            <input
+              name="linkedViolations"
+              defaultValue={template?.linkedViolations?.join(", ") || ""}
+              placeholder="VC-001, VC-005"
+            />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+              Linked Policies (comma-separated)
+            </label>
+            <input
+              name="linkedPolicies"
+              defaultValue={template?.linkedPolicies?.join(", ") || ""}
+              placeholder="POL-001, POL-003"
+            />
+          </div>
+        </div>
+        <div className="row" style={{ marginTop: 8 }}>
+          <button type="submit" className="primary">
+            {template ? "Update Template" : "Create Template"}
+          </button>
+          {template && (
+            <button type="button" onClick={onCancel} style={{ background: "#f6f9f7", border: "1px solid #dce4e1", borderRadius: 6, cursor: "pointer" }}>
+              Cancel
+            </button>
+          )}
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function CustomDropdownManager({ data, onUpdateDropdown, onAddOption, onRemoveOption }) {
+  const [tab, setTab] = useState("manage");
+  const [newDropdownName, setNewDropdownName] = useState("");
+  const [newDropdownOptions, setNewDropdownOptions] = useState("");
+
+  function handleCreateCustomDropdown() {
+    const name = newDropdownName.trim().replace(/[^a-zA-Z0-9]/g, "");
+    if (!name || data.customOptions[name]) {
+      alert("Invalid or duplicate dropdown name");
+      return;
+    }
+    const options = newDropdownOptions
+      .split("\n")
+      .map((x) => x.trim())
+      .filter(Boolean);
+    if (options.length === 0) {
+      alert("Add at least one option");
+      return;
+    }
+    onUpdateDropdown(name, options);
+    setNewDropdownName("");
+    setNewDropdownOptions("");
+    alert(`Custom dropdown "${name}" created!`);
+  }
+
+  return (
+    <div className="panel" style={{ padding: 16 }}>
+      <h3 style={{ margin: "0 0 16px" }}>Custom Fields Builder</h3>
+      <div style={{ borderBottom: "2px solid #dce4e1", marginBottom: 16, display: "flex", gap: 16 }}>
+        <button
+          onClick={() => setTab("manage")}
+          style={{
+            all: "unset",
+            padding: "8px 0",
+            borderBottom: tab === "manage" ? "3px solid var(--theme-accent)" : "none",
+            color: tab === "manage" ? "var(--theme-accent)" : "#60716c",
+            fontWeight: 700,
+            cursor: "pointer",
+            fontSize: 13,
+          }}
+        >
+          Manage Existing
+        </button>
+        <button
+          onClick={() => setTab("create")}
+          style={{
+            all: "unset",
+            padding: "8px 0",
+            borderBottom: tab === "create" ? "3px solid var(--theme-accent)" : "none",
+            color: tab === "create" ? "var(--theme-accent)" : "#60716c",
+            fontWeight: 700,
+            cursor: "pointer",
+            fontSize: 13,
+          }}
+        >
+          Create New
+        </button>
+      </div>
+
+      {tab === "manage" && (
+        <div style={{ display: "grid", gap: 16 }}>
+          {customizableDropdowns.map((dropdown) => (
+            <div key={dropdown.key} style={{ border: "1px solid #dce4e1", borderRadius: 6, padding: 12 }}>
+              <strong style={{ fontSize: 13 }}>{dropdown.label}</strong>
+              <small style={{ display: "block", color: "#60716c", marginBottom: 10 }}>{dropdown.description}</small>
+              <div style={{ display: "grid", gap: 8 }}>
+                {[...dropdown.hardcoded, ...(data.customOptions[dropdown.key] || [])].map((option) => (
+                  <div
+                    key={option}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      padding: "8px 0",
+                      borderBottom: "1px solid #edf1ef",
+                    }}
+                  >
+                    <span style={{ fontSize: 12 }}>
+                      {option}
+                      {dropdown.hardcoded.includes(option) && (
+                        <small style={{ color: "#2f7f67", marginLeft: 8, fontWeight: 700 }}>(Built-in)</small>
+                      )}
+                    </span>
+                    {!dropdown.hardcoded.includes(option) && (
+                      <button
+                        onClick={() => onRemoveOption(dropdown.key, option)}
+                        style={{
+                          background: "transparent",
+                          border: 0,
+                          color: "#b6492b",
+                          cursor: "pointer",
+                          fontWeight: 700,
+                          fontSize: 12,
+                        }}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <div style={{ paddingTop: 8, display: "grid", gridTemplateColumns: "1fr auto", gap: 8 }}>
+                  <input
+                    type="text"
+                    placeholder="Add new option"
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter") {
+                        onAddOption(dropdown.key, e.target.value);
+                        e.target.value = "";
+                      }
+                    }}
+                    style={{ flex: 1 }}
+                  />
+                  <button
+                    onClick={(e) => {
+                      const input = e.currentTarget.parentElement.querySelector("input");
+                      onAddOption(dropdown.key, input.value);
+                      input.value = "";
+                    }}
+                    className="primary"
+                    style={{ whiteSpace: "nowrap" }}
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab === "create" && (
+        <div style={{ display: "grid", gap: 12 }}>
+          <div>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+              Dropdown Name
+            </label>
+            <input
+              type="text"
+              value={newDropdownName}
+              onChange={(e) => setNewDropdownName(e.target.value)}
+              placeholder="e.g., DepartmentUnits (no spaces or special chars)"
+            />
+            <small style={{ color: "#60716c", display: "block", marginTop: 4 }}>
+              Used internally; will be displayed nicely in forms
+            </small>
+          </div>
+          <div>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+              Options (one per line)
+            </label>
+            <textarea
+              value={newDropdownOptions}
+              onChange={(e) => setNewDropdownOptions(e.target.value)}
+              placeholder="Option 1&#10;Option 2&#10;Option 3"
+              style={{ minHeight: 120 }}
+            />
+          </div>
+          <button onClick={handleCreateCustomDropdown} className="primary">
+            Create Custom Dropdown
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BrandingSettingsPanel({ themeIndex, themeColors, setThemeIndex }) {
+  const currentTheme = themeColors[themeIndex];
+
+  function handleBrandingChange(field, value) {
+    const updated = [...themeColors];
+    updated[themeIndex] = {
+      ...currentTheme,
+      [field]: value,
+    };
+    themeColors.splice(0, themeColors.length, ...updated);
+    localStorage.setItem("theme-index", themeIndex.toString());
+
+    // Apply CSS variables immediately
+    if (field === "departmentName") {
+      document.documentElement.style.setProperty("--dept-name", value);
+    } else if (field === "departmentLogoUrl") {
+      document.documentElement.style.setProperty("--dept-logo-url", value ? `url('${value}')` : "none");
+    } else if (field === "reportHeaderText") {
+      document.documentElement.style.setProperty("--report-header", value);
+    } else if (field === "signatureBlockText") {
+      document.documentElement.style.setProperty("--signature-block", value);
+    } else if (field === "accentSecondaryColor") {
+      document.documentElement.style.setProperty("--secondary-accent", value);
+    }
+  }
+
+  return (
+    <div className="panel" style={{ padding: 16 }}>
+      <h3 style={{ margin: "0 0 16px" }}>System Branding</h3>
+      <div style={{ display: "grid", gap: 16 }}>
+        <div>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "#60716c", textTransform: "uppercase" }}>
+            Department Name
+          </label>
+          <input
+            type="text"
+            value={currentTheme.departmentName}
+            onChange={(e) => handleBrandingChange("departmentName", e.target.value)}
+            placeholder="e.g., San Santos Police Department"
+          />
+        </div>
+
+        <div>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "#60716c", textTransform: "uppercase" }}>
+            Department Logo URL
+          </label>
+          <input
+            type="url"
+            value={currentTheme.departmentLogoUrl}
+            onChange={(e) => handleBrandingChange("departmentLogoUrl", e.target.value)}
+            placeholder="https://example.com/logo.png"
+          />
+          {currentTheme.departmentLogoUrl && (
+            <div style={{ marginTop: 8, padding: 8, background: "#f6f9f7", borderRadius: 6 }}>
+              <small style={{ color: "#60716c" }}>Logo Preview:</small>
+              <img
+                src={currentTheme.departmentLogoUrl}
+                alt="Department Logo"
+                style={{ maxHeight: 60, marginTop: 4, borderRadius: 4 }}
+                onError={() => {}}
+              />
+            </div>
+          )}
+        </div>
+
+        <div>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "#60716c", textTransform: "uppercase" }}>
+            Report Header Text
+          </label>
+          <input
+            type="text"
+            value={currentTheme.reportHeaderText}
+            onChange={(e) => handleBrandingChange("reportHeaderText", e.target.value)}
+            placeholder="e.g., Internal Affairs Division"
+          />
+        </div>
+
+        <div>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "#60716c", textTransform: "uppercase" }}>
+            Signature Block Text
+          </label>
+          <input
+            type="text"
+            value={currentTheme.signatureBlockText}
+            onChange={(e) => handleBrandingChange("signatureBlockText", e.target.value)}
+            placeholder="e.g., Authorized by: "
+          />
+        </div>
+
+        <div>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "#60716c", textTransform: "uppercase" }}>
+            Secondary Accent Color
+          </label>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <input
+              type="color"
+              value={currentTheme.accentSecondaryColor}
+              onChange={(e) => handleBrandingChange("accentSecondaryColor", e.target.value)}
+              style={{ width: 60, height: 44, border: "1px solid #dce4e1", borderRadius: 6, cursor: "pointer" }}
+            />
+            <input
+              type="text"
+              value={currentTheme.accentSecondaryColor}
+              onChange={(e) => handleBrandingChange("accentSecondaryColor", e.target.value)}
+              placeholder="#2f7f67"
+              style={{ flex: 1 }}
+            />
+          </div>
+        </div>
+
+        <div style={{ padding: 12, background: "#eef5f1", borderRadius: 6, borderLeft: "4px solid var(--theme-accent)" }}>
+          <strong style={{ fontSize: 13 }}>Preview</strong>
+          <div style={{ marginTop: 12, fontSize: 13, color: "#42524e" }}>
+            {currentTheme.departmentLogoUrl && (
+              <img src={currentTheme.departmentLogoUrl} alt="Logo" style={{ maxHeight: 40, marginBottom: 8 }} />
+            )}
+            <div style={{ fontWeight: 700, marginBottom: 4 }}>{currentTheme.departmentName}</div>
+            <div style={{ color: "#60716c", marginBottom: 4 }}>{currentTheme.reportHeaderText}</div>
+            <div style={{ borderTop: "1px solid #dce4e1", paddingTop: 8, marginTop: 8 }}>
+              {currentTheme.signatureBlockText}_________________
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SettingsView({ themeIndex, setThemeIndex, data, setData, createViolation, editViolation, deleteViolation, createPolicy, editPolicy, deletePolicy, createTemplate, editTemplate, deleteTemplate }) {
   const [editingViolation, setEditingViolation] = useState(null);
+  const [editingPolicy, setEditingPolicy] = useState(null);
+  const [editingTemplate, setEditingTemplate] = useState(null);
 
   function handleEditViolation(violationId) {
     setEditingViolation(data.violations.find((v) => v.id === violationId));
@@ -2540,6 +3647,79 @@ function SettingsView({ themeIndex, setThemeIndex, data, setData, createViolatio
     };
     editViolation(editingViolation.id, updates);
     setEditingViolation(null);
+    e.currentTarget.reset();
+  }
+
+  function handleEditPolicy(policyId) {
+    setEditingPolicy(data.policies.find((p) => p.id === policyId));
+  }
+
+  function handleSubmitPolicy(e) {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    const updates = {
+      title: form.get("title").toString().trim(),
+      description: form.get("description").toString().trim(),
+      url: form.get("url").toString().trim(),
+      linkedViolationIds: form
+        .get("linkedViolationIds")
+        .toString()
+        .split(",")
+        .map((x) => x.trim())
+        .filter(Boolean),
+      category: form.get("category"),
+      version: form.get("version").toString().trim(),
+      effectiveDate: form.get("effectiveDate").toString(),
+      documentSource: form.get("documentSource").toString().trim(),
+      notes: form.get("notes").toString().trim(),
+    };
+    editPolicy(editingPolicy.id, updates);
+    setEditingPolicy(null);
+    e.currentTarget.reset();
+  }
+
+  function handleEditTemplate(templateId) {
+    setEditingTemplate(data.investigationTemplates.find((t) => t.id === templateId));
+  }
+
+  function handleSubmitTemplate(e) {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    const keyQuestions = form
+      .get("keyQuestions")
+      .toString()
+      .split("\n")
+      .map((x) => x.trim())
+      .filter(Boolean);
+    const evidenceTypes = form
+      .get("requiredEvidenceTypes")
+      .toString()
+      .split("\n")
+      .map((x) => x.trim())
+      .filter(Boolean);
+    const updates = {
+      name: form.get("name").toString().trim(),
+      description: form.get("description").toString().trim(),
+      category: form.get("category"),
+      investigationScope: form.get("investigationScope").toString().trim(),
+      keyQuestions,
+      requiredEvidenceTypes: evidenceTypes,
+      linkedViolations: form
+        .get("linkedViolations")
+        .toString()
+        .split(",")
+        .map((x) => x.trim())
+        .filter(Boolean),
+      linkedPolicies: form
+        .get("linkedPolicies")
+        .toString()
+        .split(",")
+        .map((x) => x.trim())
+        .filter(Boolean),
+      estimatedInvestigationDays: parseInt(form.get("estimatedInvestigationDays") || "7"),
+    };
+    editTemplate(editingTemplate.id, updates);
+    setEditingTemplate(null);
     e.currentTarget.reset();
   }
 
@@ -2582,6 +3762,40 @@ function SettingsView({ themeIndex, setThemeIndex, data, setData, createViolatio
             ))}
           </div>
         </div>
+
+        <BrandingSettingsPanel themeIndex={themeIndex} themeColors={themeColors} setThemeIndex={setThemeIndex} />
+
+        <PolicyLibraryPanel policies={data.policies} onEdit={handleEditPolicy} onDelete={deletePolicy} />
+
+        {editingPolicy && (
+          <PolicyForm
+            policy={editingPolicy}
+            onSubmit={handleSubmitPolicy}
+            onCancel={() => setEditingPolicy(null)}
+            violations={data.violations}
+          />
+        )}
+
+        {!editingPolicy && <PolicyForm onSubmit={createPolicy} violations={data.violations} />}
+
+        <TemplateLibraryPanel templates={data.investigationTemplates} onEdit={handleEditTemplate} onDelete={deleteTemplate} />
+
+        {editingTemplate && (
+          <TemplateForm
+            template={editingTemplate}
+            onSubmit={handleSubmitTemplate}
+            onCancel={() => setEditingTemplate(null)}
+          />
+        )}
+
+        {!editingTemplate && <TemplateForm onSubmit={createTemplate} />}
+
+        <CustomDropdownManager
+          data={data}
+          onUpdateDropdown={updateCustomDropdown}
+          onAddOption={addOptionToDropdown}
+          onRemoveOption={removeOptionFromDropdown}
+        />
 
         <ViolationLibraryPanel
           violations={data.violations}
