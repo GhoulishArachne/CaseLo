@@ -4256,13 +4256,13 @@ function BrandingSettingsPanel({ themeIndex, themeColors, setThemeIndex }) {
             <input
               type="color"
               value={pendingChanges.accentSecondaryColor}
-              onChange={(e) => handleBrandingChange("accentSecondaryColor", e.target.value)}
+              onChange={(e) => handleThemeChange("accentSecondaryColor", e.target.value)}
               style={{ width: 60, height: 44, border: "1px solid #dce4e1", borderRadius: 6, cursor: "pointer" }}
             />
             <input
               type="text"
               value={pendingChanges.accentSecondaryColor}
-              onChange={(e) => handleBrandingChange("accentSecondaryColor", e.target.value)}
+              onChange={(e) => handleThemeChange("accentSecondaryColor", e.target.value)}
               placeholder="#2f7f67"
               style={{ flex: 1 }}
             />
