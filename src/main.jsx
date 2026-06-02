@@ -123,6 +123,10 @@ function normalizeData(data) {
       assignment: p.assignment ?? "",
       division: p.division ?? "",
       supervisorName: p.supervisorName ?? "",
+      riskScoreOverride: p.riskScoreOverride ?? null,
+      riskScoreOverrideDate: p.riskScoreOverrideDate ?? null,
+      riskScoreOverrideReason: p.riskScoreOverrideReason ?? "",
+      trainingDeficiencies: p.trainingDeficiencies ?? "",
       personnelHistory: p.personnelHistory ?? {
         previousComplaints: [],
         previousInvestigations: [],
@@ -237,7 +241,7 @@ function App() {
 
   const activeCase = data.cases.find((item) => item.id === activeCaseId) ?? data.cases[0];
   const activeComplaint = data.complaints?.find((item) => item.id === activeComplaintId) ?? data.complaints?.[0];
-  const navItems = ["Dashboard", "Cases", "Evidence", "People", "Timeline", "Tasks", "Notes", "Complaints", "Adjudication", "Reports", "Settings"];
+  const navItems = ["Dashboard", "Cases", "Evidence", "People", "Officer Profile", "Timeline", "Tasks", "Notes", "Complaints", "Adjudication", "Reports", "Settings"];
   const [themeIndex, setThemeIndex] = useState(() => {
     const saved = localStorage.getItem("theme-index");
     return saved ? parseInt(saved) : 0;
@@ -249,6 +253,8 @@ function App() {
     document.documentElement.style.setProperty("--theme-accent", theme.accent);
     localStorage.setItem("theme-index", themeIndex.toString());
   }, [themeIndex]);
+
+  const [selectedOfficerId, setSelectedOfficerId] = useState(null);
 
   function save(next) {
     setData(next);
@@ -661,6 +667,31 @@ function createPerson(event) {
     save(next);
   }
 
+  function updateOfficerRiskScore(officerId, riskScore, reason) {
+    const next = {
+      ...data,
+      people: data.people.map((p) =>
+        p.id !== officerId ? p : {
+          ...p,
+          riskScoreOverride: riskScore,
+          riskScoreOverrideDate: new Date().toISOString().slice(0, 10),
+          riskScoreOverrideReason: reason,
+        }
+      ),
+    };
+    save(next);
+  }
+
+  function updateTrainingDeficiencies(officerId, notes) {
+    const next = {
+      ...data,
+      people: data.people.map((p) =>
+        p.id !== officerId ? p : { ...p, trainingDeficiencies: notes }
+      ),
+    };
+    save(next);
+  }
+
   function addItem(event) {
     event.preventDefault();
     if (!activeCase) return;
@@ -915,6 +946,57 @@ function createPerson(event) {
     [data]
   );
 
+  const officerProfiles = useMemo(() => {
+    const profiles = {};
+    const investigationStatuses = ["Active Investigation", "Evidence Collection", "Interview Phase"];
+
+    for (const officer of data.people) {
+      const complaints = data.complaints.filter((c) => (c.involvedPersonIds ?? []).includes(officer.id)) ?? [];
+      const findings = data.findings.filter((f) => f.officerInvolved === officer.id) ?? [];
+      const cases = data.cases.filter((c) => (c.involvedPersonIds ?? []).includes(officer.id)) ?? [];
+
+      const sustainedFindings = findings.filter((f) => f.finding === "Sustained");
+      const complaintsIn30Days = complaints.filter((c) => {
+        const complaintDate = new Date(c.date || c.incident?.dateTime || "");
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        return complaintDate >= thirtyDaysAgo;
+      });
+
+      const currentInvestigations = cases.filter((c) => investigationStatuses.includes(c.status));
+      const priorDiscipline = sustainedFindings.filter((f) => f.disciplineTemplate !== "None").length;
+
+      const flagPoints = (earlyInterventionByEmployeeId[officer.id]?.flags ?? []).reduce((sum, flag) => {
+        return sum + (flag.severity === "critical" ? 15 : 7.5);
+      }, 0);
+
+      const baseRiskScore = (sustainedFindings.length * 25) + (complaintsIn30Days.length * 10) + flagPoints;
+      const autoRiskScore = Math.min(100, Math.round(baseRiskScore));
+      const finalRiskScore = officer.riskScoreOverride !== null ? officer.riskScoreOverride : autoRiskScore;
+
+      profiles[officer.id] = {
+        officer,
+        totalComplaints: complaints.length,
+        sustainedComplaints: sustainedFindings.length,
+        currentInvestigations: currentInvestigations.length,
+        priorDiscipline,
+        commendations: officer.personnelHistory?.commendations?.length ?? 0,
+        trainingDeficiencies: officer.trainingDeficiencies,
+        autoRiskScore,
+        riskScore: finalRiskScore,
+        riskScoreOverride: officer.riskScoreOverride,
+        riskScoreOverrideDate: officer.riskScoreOverrideDate,
+        riskScoreOverrideReason: officer.riskScoreOverrideReason,
+        earlyInterventionFlags: earlyInterventionByEmployeeId[officer.id]?.flags ?? [],
+        complaints,
+        sustainedFindings,
+        cases: currentInvestigations,
+      };
+    }
+
+    return profiles;
+  }, [data, earlyInterventionByEmployeeId]);
+
   const metrics = [
     { label: "Active cases", value: data.cases.filter((item) => !["Closed", "Archived"].includes(item.status)).length, icon: FileSearch },
     { label: "Evidence items", value: data.evidence.length, icon: Fingerprint },
@@ -991,6 +1073,7 @@ function createPerson(event) {
 
         {activeView === "Evidence" && <CollectionView title="Evidence" icon={Fingerprint} items={visibleRecords.evidence} render={EvidenceItem} />}
         {activeView === "People" && <PeopleView data={data} visiblePeople={visibleRecords.people} createPerson={createPerson} editPerson={editPerson} earlyInterventionByEmployeeId={earlyInterventionByEmployeeId} />}
+        {activeView === "Officer Profile" && <OfficerProfileView data={data} officerProfiles={officerProfiles} selectedOfficerId={selectedOfficerId} setSelectedOfficerId={setSelectedOfficerId} updateOfficerRiskScore={updateOfficerRiskScore} updateTrainingDeficiencies={updateTrainingDeficiencies} />}
         {activeView === "Complaints" && <ComplaintsView data={data} activeCase={activeCase} visibleComplaints={visibleRecords.complaints} createComplaint={submitComplaint} setActiveComplaintId={setActiveComplaintId} />}
         {activeView === "Adjudication" && <AdjudicationTab data={data} activeCase={activeCase} editFinding={editFinding} />}
 
@@ -1866,6 +1949,220 @@ function AdjudicationTab({ data, activeCase, editFinding }) {
           ))
         ) : (
           <p className="empty">No findings yet.</p>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function OfficerProfileView({ data, officerProfiles, selectedOfficerId, setSelectedOfficerId, updateOfficerRiskScore, updateTrainingDeficiencies }) {
+  const profile = selectedOfficerId ? officerProfiles[selectedOfficerId] : null;
+
+  if (!data.people.length) {
+    return <section className="collection-view"><p className="empty">No officers found.</p></section>;
+  }
+
+  const sortedOfficers = data.people.slice().sort((a, b) => a.name.localeCompare(b.name));
+
+  return (
+    <section className="collection-view">
+      <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: 16, minHeight: "80vh" }}>
+        {/* Officer Selector Sidebar */}
+        <div style={{ background: "#ffffff", border: "1px solid #dce4e1", borderRadius: 8, padding: 16, overflow: "auto" }}>
+          <h3 style={{ margin: "0 0 12px" }}>Officers</h3>
+          <div style={{ display: "grid", gap: 8 }}>
+            {sortedOfficers.map((officer) => (
+              <button
+                key={officer.id}
+                onClick={() => setSelectedOfficerId(officer.id)}
+                style={{
+                  all: "unset",
+                  padding: 10,
+                  border: selectedOfficerId === officer.id ? "2px solid var(--theme-accent)" : "1px solid #dce4e1",
+                  borderRadius: 6,
+                  background: selectedOfficerId === officer.id ? "#f0faf8" : "#fbfcfb",
+                  cursor: "pointer",
+                  textAlign: "left",
+                }}
+              >
+                <strong style={{ fontSize: 13, display: "block" }}>{officer.name}</strong>
+                <small style={{ color: "#60716c", display: "block" }}>{officer.rank || "Officer"}</small>
+                <small style={{ color: "#60716c" }}>#{officer.badgeNumber || "—"}</small>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Officer Profile Details */}
+        {profile ? (
+          <div style={{ overflow: "auto" }}>
+            {/* Profile Header */}
+            <div style={{ background: "#ffffff", border: "1px solid #dce4e1", borderRadius: 8, padding: 20, marginBottom: 16 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: 20 }}>
+                <div>
+                  <h2 style={{ margin: "0 0 8px", fontSize: 28 }}>{profile.officer.name}</h2>
+                  <p style={{ margin: 0, color: "#5a6b66" }}>
+                    {profile.officer.rank} • Badge #{profile.officer.badgeNumber || "—"}
+                  </p>
+                  <p style={{ margin: "8px 0 0", color: "#60716c" }}>
+                    {profile.officer.assignment || "Unassigned"} · {profile.officer.division || "—"}
+                  </p>
+                  <p style={{ margin: "4px 0 0", color: "#60716c" }}>Supervisor: {profile.officer.supervisorName || "—"}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Metrics Grid */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 16 }}>
+              {[
+                { label: "Total Complaints", value: profile.totalComplaints },
+                { label: "Sustained Findings", value: profile.sustainedComplaints },
+                { label: "Current Investigations", value: profile.currentInvestigations },
+                { label: "Prior Discipline", value: profile.priorDiscipline },
+                { label: "Commendations", value: profile.commendations },
+                { label: "Training Deficiencies", value: profile.trainingDeficiencies || "None" },
+                { label: "Risk Score", value: profile.riskScore, isScore: true, override: profile.riskScoreOverride },
+                { label: "Early Intervention Flags", value: profile.earlyInterventionFlags.length },
+              ].map((metric, idx) => (
+                <div key={idx} style={{ background: "#ffffff", border: "1px solid #dce4e1", borderRadius: 8, padding: 16 }}>
+                  <small style={{ color: "#60716c", display: "block", marginBottom: 8 }}>{metric.label}</small>
+                  {metric.isScore ? (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <div
+                        style={{
+                          fontSize: 32,
+                          fontWeight: 800,
+                          color: metric.value >= 70 ? "#ef4444" : metric.value >= 50 ? "#f59e0b" : metric.value >= 30 ? "#eab308" : "#16a34a",
+                        }}
+                      >
+                        {metric.value}
+                      </div>
+                      {metric.override !== null && (
+                        <small style={{ color: "#8b5cf6", fontStyle: "italic" }}>Override</small>
+                      )}
+                    </div>
+                  ) : (
+                    <strong style={{ fontSize: 24, display: "block" }}>{metric.value}</strong>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Risk Score Override Form */}
+            <div style={{ background: "#ffffff", border: "1px solid #dce4e1", borderRadius: 8, padding: 16, marginBottom: 16 }}>
+              <h3 style={{ margin: "0 0 12px" }}>Risk Score Override</h3>
+              <div style={{ display: "grid", gap: 10 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    defaultValue={profile.riskScoreOverride ?? ""}
+                    placeholder="Override score (0-100)"
+                    onBlur={(e) => {
+                      const value = e.target.value ? parseInt(e.target.value) : null;
+                      if (value !== null && value >= 0 && value <= 100) {
+                        updateOfficerRiskScore(profile.officer.id, value, e.currentTarget.nextElementSibling?.value || "");
+                      }
+                    }}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Reason for override"
+                    defaultValue={profile.riskScoreOverrideReason || ""}
+                    onBlur={(e) => {
+                      if (profile.riskScoreOverride !== null) {
+                        updateOfficerRiskScore(profile.officer.id, profile.riskScoreOverride, e.target.value);
+                      }
+                    }}
+                  />
+                </div>
+                {profile.riskScoreOverrideDate && (
+                  <small style={{ color: "#60716c" }}>Override date: {profile.riskScoreOverrideDate}</small>
+                )}
+              </div>
+            </div>
+
+            {/* Training Deficiencies */}
+            <div style={{ background: "#ffffff", border: "1px solid #dce4e1", borderRadius: 8, padding: 16, marginBottom: 16 }}>
+              <h3 style={{ margin: "0 0 12px" }}>Training Deficiencies</h3>
+              <textarea
+                value={profile.trainingDeficiencies}
+                onChange={(e) => updateTrainingDeficiencies(profile.officer.id, e.target.value)}
+                placeholder="Notes on training gaps, required trainings, etc."
+                style={{ minHeight: 100, width: "100%" }}
+              />
+            </div>
+
+            {/* Early Intervention Alerts */}
+            {profile.earlyInterventionFlags.length > 0 && (
+              <div style={{ background: "#ffe7da", border: "1px solid #d97706", borderRadius: 8, padding: 16, marginBottom: 16 }}>
+                <h3 style={{ margin: "0 0 12px", color: "#8c3b13" }}>Early Intervention Alerts</h3>
+                <div style={{ display: "grid", gap: 10 }}>
+                  {profile.earlyInterventionFlags.map((flag, idx) => (
+                    <div key={idx} style={{ background: "rgba(255,255,255,0.5)", padding: 10, borderRadius: 6 }}>
+                      <strong style={{ color: "#8c3b13" }}>{flag.type}</strong>
+                      <small style={{ display: "block", color: "#8c3b13", marginTop: 4 }}>
+                        Count: {flag.count} · Severity: {flag.severity}
+                        {flag.windowStart && flag.windowEnd && ` · ${flag.windowStart} to ${flag.windowEnd}`}
+                      </small>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Complaint History */}
+            {profile.complaints.length > 0 && (
+              <div style={{ background: "#ffffff", border: "1px solid #dce4e1", borderRadius: 8, padding: 16, marginBottom: 16 }}>
+                <h3 style={{ margin: "0 0 12px" }}>Complaint History ({profile.complaints.length})</h3>
+                <div style={{ display: "grid", gap: 10 }}>
+                  {profile.complaints.slice(0, 10).map((complaint) => (
+                    <div key={complaint.id} style={{ padding: 10, border: "1px solid #edf1ef", borderRadius: 6 }}>
+                      <strong style={{ fontSize: 13 }}>{complaint.title || complaint.category}</strong>
+                      <small style={{ display: "block", color: "#60716c", marginTop: 4 }}>
+                        {complaint.id} · {complaint.date || complaint.incident?.dateTime?.slice(0, 10)} · {complaint.complaintType}
+                      </small>
+                    </div>
+                  ))}
+                  {profile.complaints.length > 10 && (
+                    <small style={{ color: "#60716c" }}>+{profile.complaints.length - 10} more complaints</small>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Sustained Findings */}
+            {profile.sustainedFindings.length > 0 && (
+              <div style={{ background: "#ffffff", border: "1px solid #dce4e1", borderRadius: 8, padding: 16 }}>
+                <h3 style={{ margin: "0 0 12px" }}>Sustained Findings ({profile.sustainedFindings.length})</h3>
+                <div style={{ display: "grid", gap: 10 }}>
+                  {profile.sustainedFindings.map((finding) => (
+                    <div key={finding.id} style={{ padding: 10, border: "1px solid #edf1ef", borderRadius: 6 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}>
+                        <div>
+                          <strong style={{ fontSize: 13 }}>{finding.finding}</strong>
+                          <small style={{ display: "block", color: "#60716c", marginTop: 2 }}>
+                            {finding.id} · {finding.dateCreated}
+                          </small>
+                        </div>
+                        <span className="pill" style={{ background: "#ffe7da", color: "#8c3b13" }}>
+                          {finding.disciplineTemplate}
+                        </span>
+                      </div>
+                      {finding.description && (
+                        <small style={{ display: "block", color: "#60716c", marginTop: 6 }}>{finding.description}</small>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", color: "#687872" }}>
+            Select an officer to view their profile
+          </div>
         )}
       </div>
     </section>
