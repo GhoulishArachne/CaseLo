@@ -1057,7 +1057,7 @@ function createPerson(event) {
             <MetricGrid metrics={metrics} />
             <section className="grid">
               <CaseList activeCase={activeCase} caseFilter={caseFilter} filteredCases={filteredCases} setActiveCaseId={setActiveCaseId} setCaseFilter={setCaseFilter} />
-              <CaseDetail activeCase={activeCase} caseRecords={caseRecords} data={data} setData={setData} />
+              <CaseDetail activeCase={activeCase} caseRecords={caseRecords} data={data} setData={setData} editFinding={editFinding} />
               <Forms activeCase={activeCase} addItem={addItem} createCase={createCase} quickAdd={quickAdd} setQuickAdd={setQuickAdd} />
             </section>
           </>
@@ -1066,7 +1066,7 @@ function createPerson(event) {
         {activeView === "Cases" && (
           <section className="single-grid">
             <CaseList activeCase={activeCase} caseFilter={caseFilter} filteredCases={filteredCases} setActiveCaseId={setActiveCaseId} setCaseFilter={setCaseFilter} />
-            <CaseDetail activeCase={activeCase} caseRecords={caseRecords} data={data} setData={setData} />
+            <CaseDetail activeCase={activeCase} caseRecords={caseRecords} data={data} setData={setData} editFinding={editFinding} />
             <Forms activeCase={activeCase} addItem={addItem} createCase={createCase} quickAdd={quickAdd} setQuickAdd={setQuickAdd} />
           </section>
         )}
@@ -1379,7 +1379,7 @@ function LinkSection({
   );
 }
 
-function CaseDetail({ activeCase, caseRecords, data, setData }) {
+function CaseDetail({ activeCase, caseRecords, data, setData, editFinding }) {
   return (
     <section className="case-detail">
       {activeCase ? (
