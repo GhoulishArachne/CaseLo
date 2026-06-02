@@ -1451,57 +1451,91 @@ function App() {
   }
 
 
-function createPerson(event) {
+async function createPerson(event) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
 
     const name = (form.get("name")?.toString() ?? "").trim();
     if (!name) return;
 
-    const next = {
-      ...data,
-      people: [
-        {
-          id: `P-${String(data.people.length + 1).padStart(3, "0")}`,
-          name,
-          // Employee profile fields
-          rank: (form.get("rank")?.toString() ?? "").trim() || "",
-          badgeNumber: (form.get("badgeNumber")?.toString() ?? "").trim() || "",
-          assignment: (form.get("assignment")?.toString() ?? "").trim() || "",
-          division: (form.get("division")?.toString() ?? "").trim() || "",
-          supervisorName: (form.get("supervisorName")?.toString() ?? "").trim() || "",
-          // Legacy fields
-          role: (form.get("role")?.toString() ?? "").trim() || "Unspecified",
-          contact: (form.get("contact")?.toString() ?? "").trim() || "",
-          notes: (form.get("notes")?.toString() ?? "").trim() || "",
-          caseId: (form.get("caseId")?.toString() ?? "").trim() || (activeCase?.id ?? ""),
-
-          // Personnel history containers (derived for now)
-          personnelHistory: {
-            previousComplaints: [],
-            previousInvestigations: [],
-            sustainedFindings: [],
-            disciplinaryHistory: [],
-            commendations: [],
-            trainingRecords: [],
-          },
-        },
-        ...data.people,
-      ],
+    const personData = {
+      name,
+      rank: (form.get("rank")?.toString() ?? "").trim() || "",
+      badge_number: (form.get("badgeNumber")?.toString() ?? "").trim() || "",
+      department: (form.get("division")?.toString() ?? "").trim() || "",
+      personnel_history: {
+        previousComplaints: [],
+        previousInvestigations: [],
+        sustainedFindings: [],
+        disciplinaryHistory: [],
+        commendations: [],
+        trainingRecords: [],
+      },
     };
 
-    save(next);
+    try {
+      // Save to Supabase
+      await peopleService.create(personData);
+
+      // Update local state
+      const next = {
+        ...data,
+        people: [
+          {
+            id: `P-${String(data.people.length + 1).padStart(3, "0")}`,
+            ...personData,
+            // Additional fields for UI
+            assignment: (form.get("assignment")?.toString() ?? "").trim() || "",
+            supervisorName: (form.get("supervisorName")?.toString() ?? "").trim() || "",
+            role: (form.get("role")?.toString() ?? "").trim() || "Unspecified",
+            contact: (form.get("contact")?.toString() ?? "").trim() || "",
+            notes: (form.get("notes")?.toString() ?? "").trim() || "",
+            caseId: (form.get("caseId")?.toString() ?? "").trim() || (activeCase?.id ?? ""),
+          },
+          ...data.people,
+        ],
+      };
+
+      save(next);
+      event.currentTarget.reset();
+    } catch (error) {
+      console.error("Failed to create person:", error);
+      alert("Failed to add person. Please try again.");
+    }
     event.currentTarget.reset();
   }
 
-  function editPerson(personId, updates) {
-    const next = {
-      ...data,
-      people: data.people.map((p) =>
-        p.id !== personId ? p : { ...p, ...updates }
-      ),
-    };
-    save(next);
+  async function editPerson(personId, updates) {
+    try {
+      // Map UI field names to Supabase field names
+      const supabaseUpdates = {
+        name: updates.name,
+        rank: updates.rank,
+        badge_number: updates.badgeNumber,
+        department: updates.division,
+        personnel_history: updates.personnelHistory,
+      };
+
+      // Filter out undefined values
+      Object.keys(supabaseUpdates).forEach(
+        (key) => supabaseUpdates[key] === undefined && delete supabaseUpdates[key]
+      );
+
+      // Save to Supabase
+      await peopleService.update(personId, supabaseUpdates);
+
+      // Update local state
+      const next = {
+        ...data,
+        people: data.people.map((p) =>
+          p.id !== personId ? p : { ...p, ...updates }
+        ),
+      };
+      save(next);
+    } catch (error) {
+      console.error("Failed to update person:", error);
+      alert("Failed to update person. Please try again.");
+    }
   }
 
   function createFinding(event) {
