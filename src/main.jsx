@@ -62,6 +62,15 @@ function nextCaseNumber(cases) {
   return `CASE-${year}-${String(next).padStart(3, "0")}`;
 }
 
+function nextComplaintNumber(complaints) {
+  const numbers = complaints
+    .map((item) => String(item.id).match(/^CPL-(\d+)$/)?.[1])
+    .filter(Boolean)
+    .map(Number);
+  const next = numbers.length ? Math.max(...numbers) + 1 : 1;
+  return `CPL-${String(next).padStart(3, "0")}`;
+}
+
 function normalizeData(data) {
   return {
     ...seedData,
@@ -415,7 +424,7 @@ function App() {
       ...data,
       complaints: [
         {
-          id: `CPL-${String(data.complaints.length + 1).padStart(3, "0")}`,
+          id: nextComplaintNumber(data.complaints),
           title,
           // legacy fields
           date: form.get("date")?.toString() || (incidentDate ? incidentDate : new Date().toISOString().slice(0, 10)),
