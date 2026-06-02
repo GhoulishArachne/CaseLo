@@ -871,23 +871,53 @@ function App() {
     }
   }
 
-  function editViolation(violationId, updates) {
-    const next = {
-      ...data,
-      violations: data.violations.map((v) =>
-        v.id !== violationId ? v : { ...v, ...updates }
-      ),
-    };
-    save(next);
+  async function editViolation(violationId, updates) {
+    try {
+      // Map local field names to Supabase schema
+      const supabaseUpdates = {
+        violation_code: updates.id,
+        title: updates.name,
+        description: updates.description,
+        category: updates.category,
+        severity: updates.severityLevel,
+        discipline_recommendations: updates.defaultDisciplineTemplate,
+      };
+
+      // Filter out undefined values
+      Object.keys(supabaseUpdates).forEach(
+        (key) => supabaseUpdates[key] === undefined && delete supabaseUpdates[key]
+      );
+
+      await violationsService.update(violationId, supabaseUpdates);
+
+      const next = {
+        ...data,
+        violations: data.violations.map((v) =>
+          v.id !== violationId ? v : { ...v, ...updates }
+        ),
+      };
+      save(next);
+    } catch (error) {
+      console.error("Failed to update violation:", error);
+      alert("Failed to update violation. Please try again.");
+    }
   }
 
-  function deleteViolation(violationId) {
+  async function deleteViolation(violationId) {
     if (!window.confirm(`Delete violation ${violationId}? This action cannot be undone.`)) return;
-    const next = {
-      ...data,
-      violations: data.violations.filter((v) => v.id !== violationId),
-    };
-    save(next);
+
+    try {
+      await violationsService.delete(violationId);
+
+      const next = {
+        ...data,
+        violations: data.violations.filter((v) => v.id !== violationId),
+      };
+      save(next);
+    } catch (error) {
+      console.error("Failed to delete violation:", error);
+      alert("Failed to delete violation. Please try again.");
+    }
   }
 
   function nextPolicyCode(policies) {
@@ -3105,7 +3135,7 @@ function ViolationLibraryPanel({ violations, onEdit, onDelete }) {
                     Edit
                   </button>
                   <button
-                    onClick={() => onDelete(v.id)}
+                    onClick={async () => await onDelete(v.id)}
                     style={{
                       background: "transparent",
                       border: 0,
@@ -3134,9 +3164,9 @@ function ViolationForm({ violation, onSubmit, onCancel }) {
         {violation ? "Edit Violation" : "Create New Violation"}
       </h3>
       <form
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
-          onSubmit(e);
+          await onSubmit(e);
         }}
         style={{ display: "grid", gap: 10 }}
       >
@@ -3938,7 +3968,7 @@ function SettingsView({ themeIndex, setThemeIndex, data, setData, createViolatio
     setEditingViolation(data.violations.find((v) => v.id === violationId));
   }
 
-  function handleSubmitViolation(e) {
+  async function handleSubmitViolation(e) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
     const updates = {
@@ -3949,7 +3979,7 @@ function SettingsView({ themeIndex, setThemeIndex, data, setData, createViolatio
       defaultDisciplineTemplate: form.get("defaultDisciplineTemplate"),
       notes: form.get("notes").toString().trim(),
     };
-    editViolation(editingViolation.id, updates);
+    await editViolation(editingViolation.id, updates);
     setEditingViolation(null);
     e.currentTarget.reset();
   }
