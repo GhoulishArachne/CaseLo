@@ -625,6 +625,11 @@ function App() {
     const next = {
       ...data,
       cases: data.cases.filter((c) => c.id !== caseId),
+      evidence: data.evidence.filter((e) => e.caseId !== caseId),
+      events: data.events.filter((e) => e.caseId !== caseId),
+      notes: data.notes.filter((n) => n.caseId !== caseId),
+      tasks: data.tasks.filter((t) => t.caseId !== caseId),
+      findings: data.findings.filter((f) => f.caseId !== caseId),
     };
     save(next);
     setActiveCaseId(null);
