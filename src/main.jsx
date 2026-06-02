@@ -44,26 +44,26 @@ const seedData = {
   cases: [],
   complaints: [],
   people: [
-    { id: "P-001", name: "James Gamble", rank: "Chief of Police", badgeNumber: "201", assignment: "", division: "", supervisorName: "" },
-    { id: "P-002", name: "Jimmy Rockford", rank: "Deputy Chief", badgeNumber: "202", assignment: "", division: "", supervisorName: "" },
-    { id: "P-003", name: "Frank Church", rank: "Commander", badgeNumber: "203", assignment: "", division: "", supervisorName: "" },
-    { id: "P-004", name: "Ezrael Kayne", rank: "Commander", badgeNumber: "204", assignment: "", division: "", supervisorName: "" },
-    { id: "P-005", name: "Levi Pendragon", rank: "Captain", badgeNumber: "205", assignment: "", division: "", supervisorName: "" },
-    { id: "P-006", name: "Calvin Sidhe", rank: "Captain", badgeNumber: "206", assignment: "", division: "", supervisorName: "" },
-    { id: "P-007", name: "Arnold Williams", rank: "Captain", badgeNumber: "207", assignment: "", division: "", supervisorName: "" },
-    { id: "P-008", name: "Ted Woods", rank: "Lieutenant", badgeNumber: "210", assignment: "", division: "", supervisorName: "" },
-    { id: "P-009", name: "", rank: "Lieutenant", badgeNumber: "211", assignment: "", division: "", supervisorName: "" },
-    { id: "P-010", name: "Shawn Braddington", rank: "Lieutenant", badgeNumber: "212", assignment: "", division: "", supervisorName: "" },
-    { id: "P-011", name: "Daniel \"Hondo\" Harelson", rank: "Lieutenant", badgeNumber: "213", assignment: "", division: "", supervisorName: "" },
-    { id: "P-012", name: "", rank: "Lieutenant", badgeNumber: "214", assignment: "", division: "", supervisorName: "" },
-    { id: "P-013", name: "Annabelle Sable", rank: "Sergeant", badgeNumber: "215", assignment: "", division: "", supervisorName: "" },
-    { id: "P-014", name: "David Hinkleberry", rank: "Sergeant", badgeNumber: "216", assignment: "", division: "", supervisorName: "" },
-    { id: "P-015", name: "Ayumi Hirano", rank: "Sergeant", badgeNumber: "217", assignment: "", division: "", supervisorName: "" },
-    { id: "P-016", name: "Mike Kraus", rank: "Sergeant", badgeNumber: "218", assignment: "", division: "", supervisorName: "" },
-    { id: "P-017", name: "Mason Crow", rank: "Sergeant", badgeNumber: "219", assignment: "", division: "", supervisorName: "" },
-    { id: "P-018", name: "Molly Gabagooly", rank: "Sergeant", badgeNumber: "220", assignment: "", division: "", supervisorName: "" },
-    { id: "P-019", name: "Bobby Light", rank: "Sergeant", badgeNumber: "221", assignment: "", division: "", supervisorName: "" },
-    { id: "P-020", name: "Jay Savage", rank: "Sergeant", badgeNumber: "222", assignment: "", division: "", supervisorName: "" },
+    { id: "P-001", name: "James Gamble", rank: "Chief of Police", badgeNumber: "201", assignment: "", division: "" },
+    { id: "P-002", name: "Jimmy Rockford", rank: "Deputy Chief", badgeNumber: "202", assignment: "", division: "" },
+    { id: "P-003", name: "Frank Church", rank: "Commander", badgeNumber: "203", assignment: "", division: "" },
+    { id: "P-004", name: "Ezrael Kayne", rank: "Commander", badgeNumber: "204", assignment: "", division: "" },
+    { id: "P-005", name: "Levi Pendragon", rank: "Captain", badgeNumber: "205", assignment: "", division: "" },
+    { id: "P-006", name: "Calvin Sidhe", rank: "Captain", badgeNumber: "206", assignment: "", division: "" },
+    { id: "P-007", name: "Arnold Williams", rank: "Captain", badgeNumber: "207", assignment: "", division: "" },
+    { id: "P-008", name: "Ted Woods", rank: "Lieutenant", badgeNumber: "210", assignment: "", division: "" },
+    { id: "P-009", name: "", rank: "Lieutenant", badgeNumber: "211", assignment: "", division: "" },
+    { id: "P-010", name: "Shawn Braddington", rank: "Lieutenant", badgeNumber: "212", assignment: "", division: "" },
+    { id: "P-011", name: "Daniel \"Hondo\" Harelson", rank: "Lieutenant", badgeNumber: "213", assignment: "", division: "" },
+    { id: "P-012", name: "", rank: "Lieutenant", badgeNumber: "214", assignment: "", division: "" },
+    { id: "P-013", name: "Annabelle Sable", rank: "Sergeant", badgeNumber: "215", assignment: "", division: "" },
+    { id: "P-014", name: "David Hinkleberry", rank: "Sergeant", badgeNumber: "216", assignment: "", division: "" },
+    { id: "P-015", name: "Ayumi Hirano", rank: "Sergeant", badgeNumber: "217", assignment: "", division: "" },
+    { id: "P-016", name: "Mike Kraus", rank: "Sergeant", badgeNumber: "218", assignment: "", division: "" },
+    { id: "P-017", name: "Mason Crow", rank: "Sergeant", badgeNumber: "219", assignment: "", division: "" },
+    { id: "P-018", name: "Molly Gabagooly", rank: "Sergeant", badgeNumber: "220", assignment: "", division: "" },
+    { id: "P-019", name: "Bobby Light", rank: "Sergeant", badgeNumber: "221", assignment: "", division: "" },
+    { id: "P-020", name: "Jay Savage", rank: "Sergeant", badgeNumber: "222", assignment: "", division: "" },
   ],
   evidence: [],
   events: [],
@@ -445,7 +445,6 @@ function normalizeData(data) {
       badgeNumber: p.badgeNumber ?? "",
       assignment: p.assignment ?? "",
       division: p.division ?? "",
-      supervisorName: p.supervisorName ?? "",
       riskScoreOverride: p.riskScoreOverride ?? null,
       riskScoreOverrideDate: p.riskScoreOverrideDate ?? null,
       riskScoreOverrideReason: p.riskScoreOverrideReason ?? "",
@@ -683,10 +682,17 @@ async function loadDataFromSupabase() {
       customOptionsService.getAll(),
     ]);
 
+    // Map people from Supabase snake_case to camelCase
+    const mappedPeople = (people || []).map(p => ({
+      ...p,
+      badgeNumber: p.badge_number || p.badgeNumber,
+      badge_number: undefined,
+    }));
+
     console.log("Loaded data from Supabase:", {
       cases: cases?.length || 0,
       violations: violations?.length || 0,
-      people: people?.length || 0,
+      people: mappedPeople?.length || 0,
       policies: policies?.length || 0,
       templates: templates?.length || 0,
     });
@@ -694,7 +700,7 @@ async function loadDataFromSupabase() {
     return {
       cases: cases || [],
       complaints: complaints || [],
-      people: people || [],
+      people: mappedPeople || [],
       evidence: evidence || [],
       events: events || [],
       notes: notes || [],
@@ -1486,7 +1492,6 @@ async function createPerson(event) {
             ...personData,
             // Additional fields for UI
             assignment: (form.get("assignment")?.toString() ?? "").trim() || "",
-            supervisorName: (form.get("supervisorName")?.toString() ?? "").trim() || "",
             role: (form.get("role")?.toString() ?? "").trim() || "Unspecified",
             contact: (form.get("contact")?.toString() ?? "").trim() || "",
             notes: (form.get("notes")?.toString() ?? "").trim() || "",
@@ -2685,7 +2690,7 @@ function PersonItem(item) {
         <Network size={14} /> {item.rank ? `${item.rank} · ${item.badgeNumber ? `#${item.badgeNumber}` : ""}`.trim() : item.role}
       </span>
       <small>
-        {[item.assignment, item.division, item.supervisorName].filter(Boolean).join(" · ") || item.notes}
+        {[item.assignment, item.division].filter(Boolean).join(" · ") || item.notes}
       </small>
     </div>
   );
@@ -2726,13 +2731,6 @@ function PersonEditPanel({ person, editPerson }) {
           placeholder="Division"
         />
       </div>
-      <div className="row" style={{ marginTop: 10 }}>
-        <input
-          value={person.supervisorName || ""}
-          onChange={(e) => editPerson(person.id, { supervisorName: e.target.value })}
-          placeholder="Supervisor name"
-        />
-      </div>
     </div>
   );
 }
@@ -2763,7 +2761,6 @@ function PeopleView({ data, visiblePeople, createPerson, editPerson, earlyInterv
             </div>
             <div className="row" style={{ marginTop: 10 }}>
               <input name="division" placeholder="Division" />
-              <input name="supervisorName" placeholder="Supervisor name" />
             </div>
             <div className="row" style={{ marginTop: 10 }}>
               <input name="contact" placeholder="Contact" />
@@ -3026,7 +3023,6 @@ function OfficerProfileView({ data, officerProfiles, selectedOfficerId, setSelec
                     badgeNumber: fd.get("badgeNumber").toString(),
                     assignment: fd.get("assignment").toString(),
                     division: fd.get("division").toString(),
-                    supervisorName: fd.get("supervisorName").toString(),
                     contact: fd.get("contact").toString(),
                   });
                   alert("Officer information updated!");
@@ -3064,11 +3060,6 @@ function OfficerProfileView({ data, officerProfiles, selectedOfficerId, setSelec
                     <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>Division</label>
                     <input name="division" type="text" defaultValue={profile.officer.division || ""} placeholder="e.g., Special Operations" style={{ width: "100%" }} />
                   </div>
-                </div>
-
-                <div>
-                  <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>Supervisor Name</label>
-                  <input name="supervisorName" type="text" defaultValue={profile.officer.supervisorName || ""} placeholder="e.g., Captain John Smith" style={{ width: "100%" }} />
                 </div>
 
                 <div>
