@@ -598,19 +598,26 @@ function cleanupOrphanedRecords(data) {
 
 async function seedViolationsIfEmpty() {
   try {
-    const { data: violations } = await violationsService.getAll();
+    const { data: violations, error: fetchError } = await violationsService.getAll();
+
+    if (fetchError) {
+      console.error("Error fetching violations:", fetchError);
+      return;
+    }
 
     // If no violations exist, seed them
     if (!violations || violations.length === 0) {
-      console.log("Seeding violations to Supabase...");
+      console.log(`Seeding ${seedData.violations.length} violations to Supabase...`);
 
       // Extract violations from seedData
       const violationsToSeed = seedData.violations;
+      let successCount = 0;
+      let failureCount = 0;
 
       // Insert all violations
       for (const v of violationsToSeed) {
         try {
-          await violationsService.create({
+          const { data: created, error: createError } = await violationsService.create({
             violation_code: v.id,
             title: v.name,
             description: v.description,
@@ -618,15 +625,27 @@ async function seedViolationsIfEmpty() {
             severity: v.severityLevel,
             discipline_recommendations: v.defaultDisciplineTemplate,
           });
+
+          if (createError) {
+            console.error(`Failed to seed violation ${v.id}: ${createError.message}`);
+            failureCount++;
+          } else {
+            successCount++;
+          }
         } catch (err) {
-          console.error(`Failed to seed violation ${v.id}:`, err);
+          console.error(`Exception seeding violation ${v.id}:`, err);
+          failureCount++;
         }
       }
 
-      console.log(`Successfully seeded ${violationsToSeed.length} violations`);
+      console.log(
+        `Seeding complete: ${successCount} created, ${failureCount} failed`
+      );
+    } else {
+      console.log(`Violations table already has ${violations.length} entries`);
     }
   } catch (error) {
-    console.error("Error seeding violations:", error);
+    console.error("Error in seedViolationsIfEmpty:", error);
     // Continue anyway - violations will fall back to seedData
   }
 }
@@ -664,6 +683,14 @@ async function loadDataFromSupabase() {
       customOptionsService.getAll(),
     ]);
 
+    console.log("Loaded data from Supabase:", {
+      cases: cases?.length || 0,
+      violations: violations?.length || 0,
+      people: people?.length || 0,
+      policies: policies?.length || 0,
+      templates: templates?.length || 0,
+    });
+
     return {
       cases: cases || [],
       complaints: complaints || [],
@@ -680,6 +707,7 @@ async function loadDataFromSupabase() {
     };
   } catch (error) {
     console.error("Failed to load data from Supabase:", error);
+    console.log("Falling back to seedData with violations:", seedData.violations?.length || 0);
     return seedData;
   }
 }
