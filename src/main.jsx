@@ -1729,4 +1729,4 @@ function ComplaintsView({ data, activeCase, visibleComplaints, createComplaint, 
 }
 
 
-createRoot(document.getElementById("root")).render(<App />);
+createRoot(document.getElementById("root")).render(<App />);}
