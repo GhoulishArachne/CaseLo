@@ -2138,7 +2138,82 @@ async function createPerson(event) {
           {activeView === "Cases" && <section className="single-grid"><CaseList activeCase={activeCase} caseFilter={caseFilter} filteredCases={filteredCases} setActiveCaseId={setActiveCaseId} setCaseFilter={setCaseFilter} /><CaseDetail activeCase={activeCase} caseRecords={caseRecords} data={data} setData={setData} editFinding={editFinding} deleteCase={deleteCase} /><Forms activeCase={activeCase} addItem={addItem} createCase={createCase} quickAdd={quickAdd} setQuickAdd={setQuickAdd} /></section>}
           {activeView === "People" && <PeopleView data={data} visiblePeople={visibleRecords.people} createPerson={createPerson} editPerson={editPerson} earlyInterventionByEmployeeId={earlyInterventionByEmployeeId} />}
           {activeView === "Complaints" && <ComplaintsView data={data} activeCase={activeCase} visibleComplaints={visibleRecords.complaints} createComplaint={submitComplaint} setActiveComplaintId={setActiveComplaintId} />}
-          {activeView === "Settings" && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}><BrandingSettingsPanel themeIndex={themeIndex} themeColors={themeColors} setThemeIndex={setThemeIndex} /></div>}
+          {activeView === "Settings" && (
+            <div>
+              {/* Theme Selector */}
+              <div style={{ background: "#1E293B", border: "1px solid #334155", borderRadius: 8, padding: 16, marginBottom: 24 }}>
+                <h3 style={{ margin: "0 0 16px 0", fontSize: 16, fontWeight: 700, color: "#F8FAFC" }}>Select Theme</h3>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+                  {themeColors.map((theme, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setThemeIndex(idx)}
+                      style={{
+                        all: "unset",
+                        display: "grid",
+                        gap: 8,
+                        padding: 12,
+                        border: themeIndex === idx ? "2px solid #94A3B8" : "2px solid #334155",
+                        borderRadius: 8,
+                        background: "#0F172A",
+                        cursor: "pointer",
+                        textAlign: "center",
+                      }}
+                    >
+                      <div
+                        style={{
+                          height: 50,
+                          borderRadius: 6,
+                          background: theme.accent,
+                        }}
+                      />
+                      <span style={{ fontSize: 12, fontWeight: 600, color: "#F8FAFC" }}>
+                        {theme.name}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Department Branding */}
+              <div style={{ background: "#1E293B", border: "1px solid #334155", borderRadius: 8, padding: 16 }}>
+                <h3 style={{ margin: "0 0 16px 0", fontSize: 16, fontWeight: 700, color: "#F8FAFC" }}>Department Branding</h3>
+                <div style={{ display: "grid", gap: 12 }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "#94A3B8", textTransform: "uppercase" }}>
+                      Department Name
+                    </label>
+                    <input
+                      type="text"
+                      value={themeColors[themeIndex]?.departmentName || "Police Department"}
+                      onChange={(e) => {
+                        const updated = [...themeColors];
+                        updated[themeIndex] = { ...updated[themeIndex], departmentName: e.target.value };
+                        themeColors.splice(0, themeColors.length, ...updated);
+                      }}
+                      style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid #334155", background: "#0F172A", color: "#F8FAFC", fontFamily: "inherit" }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "#94A3B8", textTransform: "uppercase" }}>
+                      Department Logo URL
+                    </label>
+                    <input
+                      type="text"
+                      value={themeColors[themeIndex]?.departmentLogoUrl || ""}
+                      onChange={(e) => {
+                        const updated = [...themeColors];
+                        updated[themeIndex] = { ...updated[themeIndex], departmentLogoUrl: e.target.value };
+                        themeColors.splice(0, themeColors.length, ...updated);
+                      }}
+                      placeholder="https://example.com/logo.png"
+                      style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid #334155", background: "#0F172A", color: "#F8FAFC", fontFamily: "inherit" }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </section>
 
         {/* Right Panel - Alerts & Escalations */}
