@@ -2292,20 +2292,31 @@ async function createPerson(event) {
         </header>
 
         {activeView === "Dashboard" && (
-          <>
+          <div style={{ padding: "24px", background: "var(--theme-light)" }}>
             <MetricGrid metrics={metrics} />
-            <section className="grid">
-              <CaseList activeCase={activeCase} caseFilter={caseFilter} filteredCases={filteredCases} setActiveCaseId={setActiveCaseId} setCaseFilter={setCaseFilter} />
-              <CaseDetail activeCase={activeCase} caseRecords={caseRecords} data={data} setData={setData} editFinding={editFinding} deleteCase={deleteCase} />
-              <Forms activeCase={activeCase} addItem={addItem} createCase={createCase} quickAdd={quickAdd} setQuickAdd={setQuickAdd} />
-            </section>
-          </>
+          </div>
         )}
 
         {activeView === "Cases" && (
           <section className="single-grid">
             <CaseList activeCase={activeCase} caseFilter={caseFilter} filteredCases={filteredCases} setActiveCaseId={setActiveCaseId} setCaseFilter={setCaseFilter} />
-            <CaseDetail activeCase={activeCase} caseRecords={caseRecords} data={data} setData={setData} editFinding={editFinding} deleteCase={deleteCase} />
+            <div style={{ display: "grid", gridTemplateRows: "1fr auto", gap: 12, height: "100%" }}>
+              <CaseDetail activeCase={activeCase} caseRecords={caseRecords} data={data} setData={setData} editFinding={editFinding} deleteCase={deleteCase} />
+              <div style={{ background: "white", border: "1px solid #dce4e1", borderRadius: 8, padding: 16, maxHeight: "200px", overflowY: "auto" }}>
+                <h4 style={{ margin: "0 0 12px 0", fontSize: 14, fontWeight: 700, color: "#17212b" }}>Evidence</h4>
+                <div style={{ display: "grid", gap: 8 }}>
+                  {caseRecords.evidence?.length ? (
+                    caseRecords.evidence.map((item) => (
+                      <div key={item.id} style={{ background: "#f6f9f7", padding: 8, borderRadius: 6, fontSize: 12, color: "#5a6b66" }}>
+                        <strong style={{ color: "#17212b" }}>{item.type}</strong> • {item.source}
+                      </div>
+                    ))
+                  ) : (
+                    <p style={{ margin: 0, color: "#99a8a1", fontSize: 12 }}>No evidence yet</p>
+                  )}
+                </div>
+              </div>
+            </div>
             <Forms activeCase={activeCase} addItem={addItem} createCase={createCase} quickAdd={quickAdd} setQuickAdd={setQuickAdd} />
           </section>
         )}
