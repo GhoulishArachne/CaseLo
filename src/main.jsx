@@ -1707,7 +1707,6 @@ function createPerson(event) {
         <header className="topbar">
           <div>
             <p>Investigation Control</p>
-            <h1>Track facts, evidence, and follow-ups in one case file.</h1>
           </div>
           <div className="searchbox">
             <Search size={18} />
