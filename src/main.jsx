@@ -48,6 +48,15 @@ const caseStatuses = [
 
 const rankOrder = ["Chief of Police", "Deputy Chief", "Commander", "Captain", "Lieutenant", "Sergeant", "Corporal", "Officer", "Cadet"];
 
+const themeColors = [
+  { name: "Forest", dark: "#14201e", accent: "#2f7f67" },
+  { name: "Ocean", dark: "#1a2b4a", accent: "#3b82f6" },
+  { name: "Amethyst", dark: "#3d1f47", accent: "#a855f7" },
+  { name: "Crimson", dark: "#4a1f1f", accent: "#ef4444" },
+  { name: "Slate", dark: "#1e293b", accent: "#64748b" },
+  { name: "Teal", dark: "#0f3f3f", accent: "#14b8a6" },
+];
+
 function getRankIndex(rank) {
   return rankOrder.indexOf(rank || "") === -1 ? rankOrder.length : rankOrder.indexOf(rank);
 }
@@ -195,7 +204,18 @@ function App() {
 
   const activeCase = data.cases.find((item) => item.id === activeCaseId) ?? data.cases[0];
   const activeComplaint = data.complaints?.find((item) => item.id === activeComplaintId) ?? data.complaints?.[0];
-  const navItems = ["Dashboard", "Cases", "Evidence", "People", "Timeline", "Tasks", "Notes", "Complaints", "Reports"];
+  const navItems = ["Dashboard", "Cases", "Evidence", "People", "Timeline", "Tasks", "Notes", "Complaints", "Reports", "Settings"];
+  const [themeIndex, setThemeIndex] = useState(() => {
+    const saved = localStorage.getItem("theme-index");
+    return saved ? parseInt(saved) : 0;
+  });
+
+  useMemo(() => {
+    const theme = themeColors[themeIndex];
+    document.documentElement.style.setProperty("--theme-dark", theme.dark);
+    document.documentElement.style.setProperty("--theme-accent", theme.accent);
+    localStorage.setItem("theme-index", themeIndex.toString());
+  }, [themeIndex]);
 
   function save(next) {
     setData(next);
@@ -898,6 +918,7 @@ function createPerson(event) {
         {activeView === "Tasks" && <CollectionView title="Tasks" icon={ClipboardList} items={visibleRecords.tasks} render={TaskItem} />}
         {activeView === "Notes" && <CollectionView title="Notes" icon={FileSearch} items={visibleRecords.notes} render={NoteItem} />}
         {activeView === "Reports" && <Reports data={data} metrics={metrics} earlyInterventionByEmployeeId={earlyInterventionByEmployeeId} />}
+        {activeView === "Settings" && <SettingsView themeIndex={themeIndex} setThemeIndex={setThemeIndex} />}
 
       </section>
     </main>
@@ -1637,6 +1658,51 @@ function ReportItem(item) {
       <strong>{item.title}</strong>
       <small>{item.body}</small>
     </div>
+  );
+}
+
+function SettingsView({ themeIndex, setThemeIndex }) {
+  return (
+    <section className="collection-view">
+      <div className="collection-head">
+        <h2>Settings</h2>
+      </div>
+
+      <div className="record-grid" style={{ gridTemplateColumns: "1fr" }}>
+        <div className="panel" style={{ padding: 16 }}>
+          <h3 style={{ margin: "0 0 16px" }}>Theme Color</h3>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+            {themeColors.map((theme, idx) => (
+              <button
+                key={idx}
+                onClick={() => setThemeIndex(idx)}
+                style={{
+                  all: "unset",
+                  display: "grid",
+                  gap: 8,
+                  padding: 12,
+                  border: themeIndex === idx ? "2px solid #17212b" : "2px solid #dce4e1",
+                  borderRadius: 8,
+                  cursor: "pointer",
+                  textAlign: "center",
+                }}
+              >
+                <div
+                  style={{
+                    height: 60,
+                    borderRadius: 6,
+                    background: theme.accent,
+                  }}
+                />
+                <span style={{ fontSize: 14, fontWeight: 600, color: "#17212b" }}>
+                  {theme.name}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
