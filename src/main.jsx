@@ -3692,6 +3692,7 @@ function CustomDropdownManager({ data, onUpdateDropdown, onAddOption, onRemoveOp
 }
 
 function BrandingSettingsPanel({ themeIndex, themeColors, setThemeIndex }) {
+  const [, forceUpdate] = useState(0);
   const currentTheme = themeColors[themeIndex];
 
   function handleBrandingChange(field, value) {
@@ -3700,6 +3701,7 @@ function BrandingSettingsPanel({ themeIndex, themeColors, setThemeIndex }) {
       ...currentTheme,
       [field]: value,
     };
+    // Update the themeColors array
     themeColors.splice(0, themeColors.length, ...updated);
     localStorage.setItem("theme-index", themeIndex.toString());
 
@@ -3715,6 +3717,9 @@ function BrandingSettingsPanel({ themeIndex, themeColors, setThemeIndex }) {
     } else if (field === "accentSecondaryColor") {
       document.documentElement.style.setProperty("--secondary-accent", value);
     }
+
+    // Trigger re-render
+    forceUpdate(prev => prev + 1);
   }
 
   return (
