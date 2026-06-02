@@ -2066,8 +2066,18 @@ function Forms({ activeCase, addItem, createCase, quickAdd, setQuickAdd }) {
         <input name="classification" placeholder="Case classification" />
         <input name="investigationType" placeholder="Investigation type" />
         <div className="row">
-          <input name="opened" type="date" />
-          <input name="closed" type="date" />
+          <div style={{ flex: 1 }}>
+            <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+              Case Opened (Date)
+            </label>
+            <input name="opened" type="date" />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+              Case Closed (Date)
+            </label>
+            <input name="closed" type="date" />
+          </div>
         </div>
         <input name="assignedInvestigator" placeholder="Assigned investigator" />
         <input name="supervisingInvestigator" placeholder="Supervising investigator" />
@@ -2103,10 +2113,25 @@ function Forms({ activeCase, addItem, createCase, quickAdd, setQuickAdd }) {
           </select>
         </div>
         <div className="row">
-          <input name="source" placeholder="Source/location" disabled={!activeCase} />
-          <input name="date" type="date" disabled={!activeCase} />
+          <div style={{ flex: 1 }}>
+            <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+              Date (YYYY-MM-DD)
+            </label>
+            <input name="source" placeholder="Location or source" disabled={!activeCase} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+              Event/Discovery Date (YYYY-MM-DD)
+            </label>
+            <input name="date" type="date" disabled={!activeCase} />
+          </div>
         </div>
-        <input name="time" type="time" disabled={!activeCase} />
+        <div style={{ marginTop: 10 }}>
+          <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+            Time (HH:MM - Optional)
+          </label>
+          <input name="time" type="time" disabled={!activeCase} />
+        </div>
         <textarea name="details" placeholder="Description, observation, or chain-of-custody note" disabled={!activeCase} />
         <button className="primary" type="submit" disabled={!activeCase}>
           <Database size={17} />
@@ -3878,11 +3903,26 @@ function ComplaintsView({ data, activeCase, visibleComplaints, createComplaint, 
             {/* Incident location + datetime */}
             <div style={{ marginTop: 10 }}>
               <div className="row">
-                <input name="incidentLocation" placeholder="Incident location" defaultValue={"Unspecified"} />
-                <input name="incidentDate" type="date" placeholder="Incident date" />
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+                    Incident Location
+                  </label>
+                  <input name="incidentLocation" placeholder="Where the incident occurred" defaultValue={"Unspecified"} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+                    Incident Date (YYYY-MM-DD)
+                  </label>
+                  <input name="incidentDate" type="date" placeholder="When the incident occurred" />
+                </div>
               </div>
               <div className="row" style={{ marginTop: 10 }}>
-                <input name="incidentTime" type="time" placeholder="Incident time" />
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+                    Incident Time (HH:MM)
+                  </label>
+                  <input name="incidentTime" type="time" placeholder="Time of incident" />
+                </div>
                 <input
                   name="source"
                   placeholder="(legacy) Source/Location (auto-filled from Incident location)"
