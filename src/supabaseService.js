@@ -589,6 +589,175 @@ export const customOptionsService = {
 };
 
 // ============================================
+// DOCUMENT FOLDERS
+// ============================================
+export const documentFoldersService = {
+  getAll: async () => {
+    const { data, error } = await supabase
+      .from("document_folders")
+      .select("*");
+    return { data, error };
+  },
+
+  getOne: async (id) => {
+    const { data, error } = await supabase
+      .from("document_folders")
+      .select("*")
+      .eq("id", id)
+      .single();
+    return { data, error };
+  },
+
+  getByParent: async (parentFolderId) => {
+    const { data, error } = await supabase
+      .from("document_folders")
+      .select("*")
+      .eq("parent_folder_id", parentFolderId);
+    return { data, error };
+  },
+
+  getByType: async (docType) => {
+    const { data, error } = await supabase
+      .from("document_folders")
+      .select("*")
+      .eq("document_type", docType);
+    return { data, error };
+  },
+
+  getByPerson: async (personId) => {
+    const { data, error } = await supabase
+      .from("document_folders")
+      .select("*")
+      .eq("person_id", personId);
+    return { data, error };
+  },
+
+  create: async (folderData) => {
+    const { data, error } = await supabase
+      .from("document_folders")
+      .insert([folderData])
+      .select()
+      .single();
+    return { data, error };
+  },
+
+  update: async (id, updates) => {
+    const { data, error } = await supabase
+      .from("document_folders")
+      .update(updates)
+      .eq("id", id)
+      .select()
+      .single();
+    return { data, error };
+  },
+
+  delete: async (id) => {
+    const { error } = await supabase
+      .from("document_folders")
+      .delete()
+      .eq("id", id);
+    return { error };
+  },
+};
+
+// ============================================
+// DOCUMENTS
+// ============================================
+export const documentsService = {
+  getAll: async () => {
+    const { data, error } = await supabase
+      .from("documents")
+      .select("*");
+    return { data, error };
+  },
+
+  getOne: async (id) => {
+    const { data, error } = await supabase
+      .from("documents")
+      .select("*")
+      .eq("id", id)
+      .single();
+    return { data, error };
+  },
+
+  getByFolder: async (folderId) => {
+    const { data, error } = await supabase
+      .from("documents")
+      .select("*")
+      .eq("folder_id", folderId)
+      .order("created_at", { ascending: false });
+    return { data, error };
+  },
+
+  getByPerson: async (personId) => {
+    const { data, error } = await supabase
+      .from("documents")
+      .select("*")
+      .eq("person_id", personId);
+    return { data, error };
+  },
+
+  getByCase: async (caseId) => {
+    const { data, error } = await supabase
+      .from("documents")
+      .select("*")
+      .eq("case_id", caseId);
+    return { data, error };
+  },
+
+  create: async (docData) => {
+    const { data, error } = await supabase
+      .from("documents")
+      .insert([docData])
+      .select()
+      .single();
+    return { data, error };
+  },
+
+  update: async (id, updates) => {
+    const { data, error } = await supabase
+      .from("documents")
+      .update(updates)
+      .eq("id", id)
+      .select()
+      .single();
+    return { data, error };
+  },
+
+  delete: async (id) => {
+    const { error } = await supabase
+      .from("documents")
+      .delete()
+      .eq("id", id);
+    return { error };
+  },
+};
+
+// ============================================
+// STORAGE
+// ============================================
+export const storageService = {
+  uploadDocument: async (bucket, path, file) => {
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .upload(path, file);
+    return { data, error };
+  },
+
+  getPublicUrl: (bucket, path) => {
+    const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+    return data.publicUrl;
+  },
+
+  deleteFile: async (bucket, path) => {
+    const { error } = await supabase.storage
+      .from(bucket)
+      .remove([path]);
+    return { error };
+  },
+};
+
+// ============================================
 // REAL-TIME SUBSCRIPTIONS
 // ============================================
 export const realtimeService = {

@@ -38,6 +38,9 @@ import {
   policiesService,
   templatesService,
   customOptionsService,
+  documentFoldersService,
+  documentsService,
+  storageService,
 } from "./supabaseService";
 
 const seedData = {
@@ -287,6 +290,8 @@ const seedData = {
     priorityOptions: [],
     investigationTypes: [],
   },
+  documentFolders: [],
+  documents: [],
 };
 
 // Data is now stored in Supabase, not localStorage
@@ -737,6 +742,8 @@ async function loadDataFromSupabase() {
       { data: policies },
       { data: templates },
       { data: customOpts },
+      { data: documentFolders },
+      { data: documents },
     ] = await Promise.all([
       casesService.getAll(),
       complaintsService.getAll(),
@@ -750,6 +757,8 @@ async function loadDataFromSupabase() {
       policiesService.getAll(),
       templatesService.getAll(),
       customOptionsService.getAll(),
+      documentFoldersService.getAll(),
+      documentsService.getAll(),
     ]);
 
     // Map people from Supabase snake_case to camelCase
@@ -780,6 +789,8 @@ async function loadDataFromSupabase() {
       policies: policies || [],
       investigationTemplates: templates || [],
       customOptions: customOpts || [],
+      documentFolders: documentFolders || [],
+      documents: documents || [],
     };
   } catch (error) {
     console.error("Failed to load data from Supabase:", error);
@@ -800,6 +811,32 @@ function App() {
     const fetchData = async () => {
       try {
         const loadedData = await loadDataFromSupabase();
+
+        // Initialize default folders if none exist
+        if (!loadedData.documentFolders || loadedData.documentFolders.length === 0) {
+          const defaultFolderNames = [
+            "Personnel Files",
+            "Training Records",
+            "Internal Affairs Reports",
+            "Promotion Packets",
+            "Department Policies"
+          ];
+
+          const createdFolders = [];
+          for (const name of defaultFolderNames) {
+            const { data: folder, error } = await documentFoldersService.create({
+              name,
+              document_type: "general",
+            });
+            if (!error && folder) {
+              createdFolders.push(folder);
+            }
+          }
+          if (createdFolders.length > 0) {
+            loadedData.documentFolders = createdFolders;
+          }
+        }
+
         setData(loadedData);
         setActiveCaseId(loadedData.cases?.[0]?.id ?? "");
         setActiveComplaintId(loadedData.complaints?.[0]?.id ?? "");
@@ -885,7 +922,7 @@ function App() {
 
   const activeCase = data.cases.find((item) => item.id === activeCaseId) ?? data.cases[0];
   const activeComplaint = data.complaints?.find((item) => item.id === activeComplaintId) ?? data.complaints?.[0];
-  const navItems = ["Dashboard", "Cases", "Evidence", "People", "Officer Profile", "Timeline", "Tasks", "Notes", "Complaints", "Adjudication", "Reports", "Settings"];
+  const navItems = ["Dashboard", "Cases", "Evidence", "People", "Officer Profile", "Records", "Timeline", "Tasks", "Notes", "Complaints", "Adjudication", "Reports", "Settings"];
   const [themeIndex, setThemeIndex] = useState(() => {
     const saved = localStorage.getItem("theme-index");
     return saved ? parseInt(saved) : 0;
@@ -2289,6 +2326,7 @@ async function createPerson(event) {
         {activeView === "Evidence" && <CollectionView title="Evidence" icon={Fingerprint} items={visibleRecords.evidence} render={EvidenceItem} />}
         {activeView === "People" && <PeopleView data={data} visiblePeople={visibleRecords.people} createPerson={createPerson} editPerson={editPerson} earlyInterventionByEmployeeId={earlyInterventionByEmployeeId} />}
         {activeView === "Officer Profile" && <OfficerProfileView data={data} officerProfiles={officerProfiles} selectedOfficerId={selectedOfficerId} setSelectedOfficerId={setSelectedOfficerId} updateOfficerRiskScore={updateOfficerRiskScore} updateTrainingDeficiencies={updateTrainingDeficiencies} editPerson={editPerson} />}
+        {activeView === "Records" && <RecordsView data={data} setData={setData} />}
         {activeView === "Complaints" && <ComplaintsView data={data} activeCase={activeCase} visibleComplaints={visibleRecords.complaints} createComplaint={submitComplaint} setActiveComplaintId={setActiveComplaintId} />}
         {activeView === "Adjudication" && <AdjudicationTab data={data} activeCase={activeCase} editFinding={editFinding} />}
 
@@ -3229,6 +3267,418 @@ function AdjudicationTab({ data, activeCase, editFinding }) {
         ) : (
           <p className="empty">No findings yet.</p>
         )}
+      </div>
+    </section>
+  );
+}
+
+function RecordsView({ data, setData }) {
+  const [selectedFolderId, setSelectedFolderId] = useState(null);
+  const [selectedDocumentId, setSelectedDocumentId] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [expandedFolders, setExpandedFolders] = useState(new Set());
+  const [showUploadForm, setShowUploadForm] = useState(false);
+  const [uploadFormData, setUploadFormData] = useState({
+    title: "",
+    documentType: "personnel_file",
+    folderId: null,
+    description: "",
+  });
+
+  const rootFolders = (data.documentFolders || []).filter(f => !f.parent_folder_id);
+  const selectedFolder = data.documentFolders?.find(f => f.id === selectedFolderId);
+  const selectedDocument = data.documents?.find(d => d.id === selectedDocumentId);
+
+  const documentsInFolder = selectedFolderId
+    ? (data.documents || []).filter(d => d.folder_id === selectedFolderId)
+    : [];
+
+  const filteredDocuments = documentsInFolder.filter(d =>
+    d.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const getChildFolders = (parentId) => {
+    return (data.documentFolders || []).filter(f => f.parent_folder_id === parentId);
+  };
+
+  const toggleFolderExpansion = (folderId) => {
+    const newExpanded = new Set(expandedFolders);
+    if (newExpanded.has(folderId)) {
+      newExpanded.delete(folderId);
+    } else {
+      newExpanded.add(folderId);
+    }
+    setExpandedFolders(newExpanded);
+  };
+
+  const FolderTreeItem = ({ folder, level = 0 }) => {
+    const children = getChildFolders(folder.id);
+    const isExpanded = expandedFolders.has(folder.id);
+
+    return (
+      <div key={folder.id} style={{ paddingLeft: `${level * 16}px` }}>
+        <div
+          style={{
+            padding: "8px 8px",
+            cursor: "pointer",
+            backgroundColor: selectedFolderId === folder.id ? "var(--theme-accent)" : "transparent",
+            color: selectedFolderId === folder.id ? "#fff" : "var(--theme-text)",
+            borderRadius: "4px",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            marginBottom: "2px",
+          }}
+          onClick={() => {
+            setSelectedFolderId(folder.id);
+            setSelectedDocumentId(null);
+          }}
+        >
+          {children.length > 0 && (
+            <span
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleFolderExpansion(folder.id);
+              }}
+              style={{ cursor: "pointer", userSelect: "none" }}
+            >
+              {isExpanded ? "▼" : "▶"}
+            </span>
+          )}
+          {children.length === 0 && <span style={{ width: "16px" }} />}
+          📁 {folder.name}
+        </div>
+        {isExpanded && children.map(child => <FolderTreeItem key={child.id} folder={child} level={level + 1} />)}
+      </div>
+    );
+  };
+
+  const handleCreateFolder = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const newFolder = {
+      name: formData.get("folderName"),
+      parent_folder_id: selectedFolderId,
+      document_type: "general",
+    };
+
+    const { data: created, error } = await documentFoldersService.create(newFolder);
+    if (!error) {
+      setData(prev => ({
+        ...prev,
+        documentFolders: [...(prev.documentFolders || []), created],
+      }));
+      e.currentTarget.reset();
+    } else {
+      alert("Error creating folder: " + error.message);
+    }
+  };
+
+  const handleUploadDocument = async (e) => {
+    e.preventDefault();
+    if (!selectedFolderId) {
+      alert("Please select a folder first");
+      return;
+    }
+
+    const formData = new FormData(e.currentTarget);
+    const file = formData.get("file");
+
+    if (!file) {
+      alert("Please select a file");
+      return;
+    }
+
+    const docId = crypto.randomUUID();
+    const storagePath = `${selectedFolderId}/${docId}/${file.name}`;
+
+    const { error: uploadError } = await storageService.uploadDocument("documents", storagePath, file);
+    if (uploadError) {
+      alert("Upload error: " + uploadError.message);
+      return;
+    }
+
+    const newDocument = {
+      title: uploadFormData.title || file.name,
+      filename: file.name,
+      document_type: uploadFormData.documentType,
+      folder_id: selectedFolderId,
+      description: uploadFormData.description,
+      storage_path: storagePath,
+      file_size: file.size,
+      mime_type: file.type,
+    };
+
+    const { data: created, error } = await documentsService.create(newDocument);
+    if (!error) {
+      setData(prev => ({
+        ...prev,
+        documents: [...(prev.documents || []), created],
+      }));
+      setUploadFormData({ title: "", documentType: "personnel_file", folderId: null, description: "" });
+      setShowUploadForm(false);
+      e.currentTarget.reset();
+    } else {
+      alert("Error saving document: " + error.message);
+    }
+  };
+
+  return (
+    <section style={{ display: "grid", gridTemplateColumns: "250px 1fr", gap: "24px", height: "100%", minHeight: "600px" }}>
+      <aside style={{ overflowY: "auto", paddingRight: "12px" }}>
+        <h3 style={{ marginBottom: "16px", color: "var(--theme-text)", fontSize: "14px" }}>FOLDERS</h3>
+        <div style={{ marginBottom: "16px" }}>
+          {rootFolders.length === 0 ? (
+            <p style={{ color: "var(--theme-text)", fontSize: "12px" }}>No folders yet</p>
+          ) : (
+            rootFolders.map(folder => <FolderTreeItem key={folder.id} folder={folder} />)
+          )}
+        </div>
+
+        {selectedFolderId && (
+          <form onSubmit={handleCreateFolder} style={{ marginTop: "16px", paddingTop: "16px", borderTop: "1px solid #dce4e1" }}>
+            <input
+              type="text"
+              name="folderName"
+              placeholder="New folder name"
+              style={{
+                width: "100%",
+                padding: "8px",
+                marginBottom: "8px",
+                border: "1px solid #dce4e1",
+                borderRadius: "4px",
+                fontSize: "12px",
+              }}
+              required
+            />
+            <button
+              type="submit"
+              style={{
+                width: "100%",
+                padding: "6px 12px",
+                backgroundColor: "var(--theme-accent)",
+                color: "#fff",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "12px",
+              }}
+            >
+              Create Folder
+            </button>
+          </form>
+        )}
+      </aside>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+        <div>
+          <h2 style={{ marginBottom: "12px", color: "var(--theme-text)" }}>
+            {selectedFolder ? selectedFolder.name : "Records"}
+          </h2>
+          <input
+            type="text"
+            placeholder="Search documents..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{
+              width: "100%",
+              maxWidth: "400px",
+              padding: "8px 12px",
+              border: "1px solid #dce4e1",
+              borderRadius: "4px",
+              fontSize: "13px",
+            }}
+          />
+        </div>
+
+        {selectedFolderId && (
+          <button
+            onClick={() => setShowUploadForm(!showUploadForm)}
+            style={{
+              alignSelf: "flex-start",
+              padding: "8px 16px",
+              backgroundColor: "var(--theme-accent)",
+              color: "#fff",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontSize: "13px",
+            }}
+          >
+            {showUploadForm ? "Cancel" : "Upload Document"}
+          </button>
+        )}
+
+        {showUploadForm && selectedFolderId && (
+          <form
+            onSubmit={handleUploadDocument}
+            style={{
+              padding: "16px",
+              backgroundColor: "#f5f5f5",
+              borderRadius: "4px",
+              marginBottom: "16px",
+            }}
+          >
+            <div style={{ marginBottom: "12px" }}>
+              <label style={{ display: "block", fontSize: "12px", marginBottom: "4px" }}>
+                DOCUMENT TITLE
+              </label>
+              <input
+                type="text"
+                placeholder="Leave blank for filename"
+                value={uploadFormData.title}
+                onChange={(e) => setUploadFormData({ ...uploadFormData, title: e.target.value })}
+                style={{
+                  width: "100%",
+                  padding: "8px",
+                  border: "1px solid #dce4e1",
+                  borderRadius: "4px",
+                  fontSize: "12px",
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: "12px" }}>
+              <label style={{ display: "block", fontSize: "12px", marginBottom: "4px" }}>
+                DOCUMENT TYPE
+              </label>
+              <select
+                value={uploadFormData.documentType}
+                onChange={(e) => setUploadFormData({ ...uploadFormData, documentType: e.target.value })}
+                style={{
+                  width: "100%",
+                  padding: "8px",
+                  border: "1px solid #dce4e1",
+                  borderRadius: "4px",
+                  fontSize: "12px",
+                }}
+              >
+                <option value="personnel_file">Personnel File</option>
+                <option value="training_record">Training Record</option>
+                <option value="ia_report">IA Report</option>
+                <option value="promotion_packet">Promotion Packet</option>
+                <option value="policy">Policy Document</option>
+              </select>
+            </div>
+
+            <div style={{ marginBottom: "12px" }}>
+              <label style={{ display: "block", fontSize: "12px", marginBottom: "4px" }}>
+                DESCRIPTION (OPTIONAL)
+              </label>
+              <textarea
+                placeholder="Add notes about this document"
+                value={uploadFormData.description}
+                onChange={(e) => setUploadFormData({ ...uploadFormData, description: e.target.value })}
+                style={{
+                  width: "100%",
+                  padding: "8px",
+                  border: "1px solid #dce4e1",
+                  borderRadius: "4px",
+                  fontSize: "12px",
+                  minHeight: "60px",
+                  fontFamily: "system-ui",
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: "12px" }}>
+              <label style={{ display: "block", fontSize: "12px", marginBottom: "4px" }}>
+                SELECT FILE
+              </label>
+              <input
+                type="file"
+                name="file"
+                required
+                style={{ fontSize: "12px" }}
+              />
+            </div>
+
+            <button
+              type="submit"
+              style={{
+                padding: "8px 16px",
+                backgroundColor: "var(--theme-accent)",
+                color: "#fff",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "13px",
+              }}
+            >
+              Upload
+            </button>
+          </form>
+        )}
+
+        <div style={{ flex: 1, display: "grid", gridTemplateRows: "auto 1fr auto", gap: "16px" }}>
+          <div style={{ borderBottom: "1px solid #dce4e1" }}>
+            <h3 style={{ marginBottom: "12px", color: "var(--theme-text)", fontSize: "13px" }}>
+              DOCUMENTS ({filteredDocuments.length})
+            </h3>
+          </div>
+
+          <div style={{ overflowY: "auto" }}>
+            {filteredDocuments.length === 0 ? (
+              <p style={{ color: "var(--theme-text)", fontSize: "13px" }}>
+                {selectedFolderId ? "No documents in this folder" : "Select a folder to view documents"}
+              </p>
+            ) : (
+              filteredDocuments.map(doc => (
+                <div
+                  key={doc.id}
+                  onClick={() => setSelectedDocumentId(doc.id)}
+                  style={{
+                    padding: "10px 12px",
+                    backgroundColor: selectedDocumentId === doc.id ? "var(--theme-accent)" : "transparent",
+                    color: selectedDocumentId === doc.id ? "#fff" : "var(--theme-text)",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    marginBottom: "4px",
+                    fontSize: "13px",
+                    border: selectedDocumentId === doc.id ? "1px solid var(--theme-accent)" : "1px solid transparent",
+                  }}
+                >
+                  📄 {doc.title || doc.filename}
+                </div>
+              ))
+            )}
+          </div>
+
+          {selectedDocument && (
+            <div style={{ paddingTop: "16px", borderTop: "1px solid #dce4e1" }}>
+              <h3 style={{ color: "var(--theme-text)", fontSize: "13px", marginBottom: "8px" }}>
+                DOCUMENT INFO
+              </h3>
+              <div style={{ fontSize: "12px", color: "var(--theme-text)", lineHeight: "1.6" }}>
+                <p><strong>Title:</strong> {selectedDocument.title || selectedDocument.filename}</p>
+                <p><strong>Type:</strong> {selectedDocument.document_type}</p>
+                <p><strong>Size:</strong> {selectedDocument.file_size ? (selectedDocument.file_size / 1024).toFixed(1) + " KB" : "Unknown"}</p>
+                <p><strong>Uploaded:</strong> {new Date(selectedDocument.created_at).toLocaleDateString()}</p>
+                {selectedDocument.description && (
+                  <p><strong>Notes:</strong> {selectedDocument.description}</p>
+                )}
+                <button
+                  onClick={() => {
+                    const publicUrl = storageService.getPublicUrl("documents", selectedDocument.storage_path);
+                    window.open(publicUrl, "_blank");
+                  }}
+                  style={{
+                    marginTop: "8px",
+                    padding: "6px 12px",
+                    backgroundColor: "var(--theme-accent)",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    fontSize: "12px",
+                  }}
+                >
+                  Download
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </section>
   );

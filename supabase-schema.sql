@@ -217,6 +217,45 @@ CREATE INDEX IF NOT EXISTS idx_findings_case_id ON findings(case_id);
 CREATE INDEX IF NOT EXISTS idx_complaints_number ON complaints(complaint_number);
 
 -- ============================================
+-- TABLE: document_folders
+-- ============================================
+CREATE TABLE IF NOT EXISTS document_folders (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
+  parent_folder_id UUID REFERENCES document_folders(id) ON DELETE CASCADE,
+  document_type VARCHAR(50),
+  person_id UUID REFERENCES people(id) ON DELETE SET NULL,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE: documents
+-- ============================================
+CREATE TABLE IF NOT EXISTS documents (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title VARCHAR(255) NOT NULL,
+  filename VARCHAR(255),
+  document_type VARCHAR(50),
+  folder_id UUID NOT NULL REFERENCES document_folders(id) ON DELETE CASCADE,
+  person_id UUID REFERENCES people(id) ON DELETE SET NULL,
+  case_id UUID REFERENCES cases(id) ON DELETE SET NULL,
+  storage_path TEXT,
+  description TEXT,
+  file_size INT,
+  mime_type VARCHAR(100),
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_document_folders_person ON document_folders(person_id);
+CREATE INDEX IF NOT EXISTS idx_document_folders_parent ON document_folders(parent_folder_id);
+CREATE INDEX IF NOT EXISTS idx_documents_folder ON documents(folder_id);
+CREATE INDEX IF NOT EXISTS idx_documents_person ON documents(person_id);
+CREATE INDEX IF NOT EXISTS idx_documents_case ON documents(case_id);
+
+-- ============================================
 -- ROW-LEVEL SECURITY (RLS) Setup
 -- ============================================
 
@@ -233,6 +272,8 @@ ALTER TABLE violations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE policies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE investigation_templates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE custom_options ENABLE ROW LEVEL SECURITY;
+ALTER TABLE document_folders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
 
 -- Policy: All authenticated users can read/write all records
 CREATE POLICY "Enable all for authenticated users on cases" ON cases
@@ -280,6 +321,14 @@ CREATE POLICY "Enable all for authenticated users on investigation_templates" ON
   WITH CHECK (auth.role() = 'authenticated');
 
 CREATE POLICY "Enable all for authenticated users on custom_options" ON custom_options
+  FOR ALL USING (auth.role() = 'authenticated')
+  WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Enable all for authenticated users on document_folders" ON document_folders
+  FOR ALL USING (auth.role() = 'authenticated')
+  WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Enable all for authenticated users on documents" ON documents
   FOR ALL USING (auth.role() = 'authenticated')
   WITH CHECK (auth.role() = 'authenticated');
 
