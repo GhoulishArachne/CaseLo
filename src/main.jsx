@@ -4724,7 +4724,7 @@ function ComplaintsView({ data, activeCase, visibleComplaints, createComplaint, 
 
             {/* Escalate for supervisor review */}
             <div style={{ marginTop: 10, display: "grid", gap: 8 }}>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}>
                 <input type="checkbox" name="supervisorReferralEnabled" />
                 <span>Escalate for supervisor review</span>
               </label>
@@ -4838,10 +4838,10 @@ function AppWrapper() {
         onClick={logout}
         style={{
           position: "absolute",
-          top: "12px",
-          right: "28px",
-          zIndex: 100,
-          background: "transparent",
+          top: "24px",
+          right: "12px",
+          zIndex: 1000,
+          background: "white",
           border: "1px solid #dce4e1",
           padding: "8px 12px",
           borderRadius: "6px",
