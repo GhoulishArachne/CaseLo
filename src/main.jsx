@@ -367,6 +367,26 @@ const themeColors = [
     signatureBlockText: "Authorized by: ",
     accentSecondaryColor: "#0d9488",
   },
+  {
+    name: "Midnight",
+    dark: "#0a0e27",
+    accent: "#6366f1",
+    departmentName: "Police Department",
+    departmentLogoUrl: "",
+    reportHeaderText: "Internal Affairs Investigation",
+    signatureBlockText: "Authorized by: ",
+    accentSecondaryColor: "#4f46e5",
+  },
+  {
+    name: "Ember",
+    dark: "#2b1810",
+    accent: "#f97316",
+    departmentName: "Police Department",
+    departmentLogoUrl: "",
+    reportHeaderText: "Internal Affairs Investigation",
+    signatureBlockText: "Authorized by: ",
+    accentSecondaryColor: "#ea580c",
+  },
 ];
 
 const findingTypes = ["Sustained", "Not Sustained", "Exonerated", "Unfounded", "Policy Failure"];
