@@ -596,8 +596,44 @@ function cleanupOrphanedRecords(data) {
   };
 }
 
+async function seedViolationsIfEmpty() {
+  try {
+    const { data: violations } = await violationsService.getAll();
+
+    // If no violations exist, seed them
+    if (!violations || violations.length === 0) {
+      console.log("Seeding violations to Supabase...");
+
+      // Extract violations from seedData
+      const violationsToSeed = seedData.violations;
+
+      // Insert all violations
+      for (const v of violationsToSeed) {
+        await violationsService.create({
+          id: v.id,
+          violation_code: v.id,
+          title: v.name,
+          description: v.description,
+          category: v.category,
+          severity: v.severityLevel,
+          discipline_recommendations: v.defaultDisciplineTemplate,
+          created_at: new Date().toISOString(),
+        });
+      }
+
+      console.log(`Successfully seeded ${violationsToSeed.length} violations`);
+    }
+  } catch (error) {
+    console.error("Error seeding violations:", error);
+    // Continue anyway - violations will fall back to seedData
+  }
+}
+
 async function loadDataFromSupabase() {
   try {
+    // Seed violations if they don't exist
+    await seedViolationsIfEmpty();
+
     const [
       { data: cases },
       { data: complaints },
