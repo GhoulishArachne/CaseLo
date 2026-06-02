@@ -532,10 +532,23 @@ function normalizeData(data) {
 }
 
 
+function cleanupOrphanedRecords(data) {
+  const validCaseIds = new Set(data.cases.map((c) => c.id));
+  return {
+    ...data,
+    evidence: data.evidence.filter((e) => validCaseIds.has(e.caseId)),
+    events: data.events.filter((e) => validCaseIds.has(e.caseId)),
+    notes: data.notes.filter((n) => validCaseIds.has(n.caseId)),
+    tasks: data.tasks.filter((t) => validCaseIds.has(t.caseId)),
+    findings: data.findings.filter((f) => validCaseIds.has(f.caseId)),
+  };
+}
+
 function loadData() {
   try {
     const saved = localStorage.getItem(storeKey);
-    return saved ? normalizeData(JSON.parse(saved)) : seedData;
+    const normalized = saved ? normalizeData(JSON.parse(saved)) : seedData;
+    return cleanupOrphanedRecords(normalized);
   } catch {
     return seedData;
   }
@@ -3797,6 +3810,39 @@ function SettingsView({ themeIndex, setThemeIndex, data, setData, createViolatio
         </div>
 
         <BrandingSettingsPanel themeIndex={themeIndex} themeColors={themeColors} setThemeIndex={setThemeIndex} />
+
+        <div className="panel" style={{ padding: 16 }}>
+          <h3 style={{ margin: "0 0 16px" }}>Database Maintenance</h3>
+          <p style={{ fontSize: 13, color: "#60716c", marginBottom: 12 }}>
+            Clean up orphaned records (tasks, evidence, notes, events, findings) that belong to deleted cases.
+          </p>
+          <button
+            onClick={() => {
+              const caseIds = new Set(data.cases.map((c) => c.id));
+              const orphanedEvidence = data.evidence.filter((e) => !caseIds.has(e.caseId)).length;
+              const orphanedEvents = data.events.filter((e) => !caseIds.has(e.caseId)).length;
+              const orphanedNotes = data.notes.filter((n) => !caseIds.has(n.caseId)).length;
+              const orphanedTasks = data.tasks.filter((t) => !caseIds.has(t.caseId)).length;
+              const orphanedFindings = data.findings.filter((f) => !caseIds.has(f.caseId)).length;
+              const total = orphanedEvidence + orphanedEvents + orphanedNotes + orphanedTasks + orphanedFindings;
+
+              if (total === 0) {
+                alert("✓ No orphaned records found. Database is clean!");
+                return;
+              }
+
+              if (window.confirm(`Found ${total} orphaned records:\n\n- Evidence: ${orphanedEvidence}\n- Events: ${orphanedEvents}\n- Notes: ${orphanedNotes}\n- Tasks: ${orphanedTasks}\n- Findings: ${orphanedFindings}\n\nDelete these orphaned records?`)) {
+                const cleaned = cleanupOrphanedRecords(data);
+                setData(cleaned);
+                localStorage.setItem(storeKey, JSON.stringify(cleaned));
+                alert(`✓ Cleaned up ${total} orphaned records. Database is now clean.`);
+              }
+            }}
+            className="primary"
+          >
+            Scan & Clean Orphaned Records
+          </button>
+        </div>
 
         <PolicyLibraryPanel policies={data.policies} onEdit={handleEditPolicy} onDelete={deletePolicy} />
 
