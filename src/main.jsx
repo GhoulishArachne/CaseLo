@@ -609,16 +609,18 @@ async function seedViolationsIfEmpty() {
 
       // Insert all violations
       for (const v of violationsToSeed) {
-        await violationsService.create({
-          id: v.id,
-          violation_code: v.id,
-          title: v.name,
-          description: v.description,
-          category: v.category,
-          severity: v.severityLevel,
-          discipline_recommendations: v.defaultDisciplineTemplate,
-          created_at: new Date().toISOString(),
-        });
+        try {
+          await violationsService.create({
+            violation_code: v.id,
+            title: v.name,
+            description: v.description,
+            category: v.category,
+            severity: v.severityLevel,
+            discipline_recommendations: v.defaultDisciplineTemplate,
+          });
+        } catch (err) {
+          console.error(`Failed to seed violation ${v.id}:`, err);
+        }
       }
 
       console.log(`Successfully seeded ${violationsToSeed.length} violations`);
@@ -826,30 +828,47 @@ function App() {
     return `VIOL-${String(next).padStart(3, "0")}`;
   }
 
-  function createViolation(event) {
+  async function createViolation(event) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const name = form.get("name").toString().trim();
     if (!name) return;
 
-    const id = nextViolationCode(data.violations);
-    const next = {
-      ...data,
-      violations: [
-        {
-          id,
-          name,
-          description: form.get("description").toString().trim(),
-          category: form.get("category") || "Other",
-          severityLevel: form.get("severityLevel") || "Medium",
-          defaultDisciplineTemplate: form.get("defaultDisciplineTemplate") || "None",
-          notes: form.get("notes").toString().trim(),
-        },
-        ...data.violations,
-      ],
-    };
-    save(next);
-    event.currentTarget.reset();
+    const code = nextViolationCode(data.violations);
+
+    try {
+      // Create in Supabase
+      await violationsService.create({
+        violation_code: code,
+        title: name,
+        description: form.get("description").toString().trim(),
+        category: form.get("category") || "Other",
+        severity: form.get("severityLevel") || "Medium",
+        discipline_recommendations: form.get("defaultDisciplineTemplate") || "None",
+      });
+
+      // Update local state
+      const next = {
+        ...data,
+        violations: [
+          {
+            id: code,
+            name,
+            description: form.get("description").toString().trim(),
+            category: form.get("category") || "Other",
+            severityLevel: form.get("severityLevel") || "Medium",
+            defaultDisciplineTemplate: form.get("defaultDisciplineTemplate") || "None",
+            notes: form.get("notes").toString().trim(),
+          },
+          ...data.violations,
+        ],
+      };
+      save(next);
+      event.currentTarget.reset();
+    } catch (error) {
+      console.error("Failed to create violation:", error);
+      alert("Failed to create violation. Please try again.");
+    }
   }
 
   function editViolation(violationId, updates) {
