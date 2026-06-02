@@ -1277,7 +1277,7 @@ function CaseLinking({ activeCase, data, save, setData }) {
           setText={setInvolvedPersonText}
           candidates={data.people}
           candidateValue={(p) => p.id}
-          candidateLabel={(p) => p.id}
+          candidateLabel={(p) => `${p.id} · ${p.name} (${p.rank || "Officer"})`}
           onAdd={() => updateInvolvedPeople(toggleListField(activeCase.involvedPersonIds, parseCsv(involvedPersonText)).filter(Boolean))}
           onRemove={(id) => removeIdFromField("involvedPersonIds", id)}
         />
@@ -1335,7 +1335,7 @@ function LinkSection({
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder={`Enter ids to link (comma-separated). Example: ${candidates[0]?.id ?? ""}`}
+          placeholder={`Enter officer IDs to link (comma-separated). Example: ${candidates.slice(0, 2).map((c) => c.id).join(", ") || "P-001, P-002"}`}
         />
       </div>
       <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
