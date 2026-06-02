@@ -1649,6 +1649,9 @@ function createPerson(event) {
             createTemplate={createTemplate}
             editTemplate={editTemplate}
             deleteTemplate={deleteTemplate}
+            updateCustomDropdown={updateCustomDropdown}
+            addOptionToDropdown={addOptionToDropdown}
+            removeOptionFromDropdown={removeOptionFromDropdown}
           />
         )}
 
@@ -3650,7 +3653,7 @@ function BrandingSettingsPanel({ themeIndex, themeColors, setThemeIndex }) {
   );
 }
 
-function SettingsView({ themeIndex, setThemeIndex, data, setData, createViolation, editViolation, deleteViolation, createPolicy, editPolicy, deletePolicy, createTemplate, editTemplate, deleteTemplate }) {
+function SettingsView({ themeIndex, setThemeIndex, data, setData, createViolation, editViolation, deleteViolation, createPolicy, editPolicy, deletePolicy, createTemplate, editTemplate, deleteTemplate, updateCustomDropdown, addOptionToDropdown, removeOptionFromDropdown }) {
   const [editingViolation, setEditingViolation] = useState(null);
   const [editingPolicy, setEditingPolicy] = useState(null);
   const [editingTemplate, setEditingTemplate] = useState(null);
