@@ -2020,7 +2020,7 @@ async function createPerson(event) {
 
         {activeView === "Evidence" && <CollectionView title="Evidence" icon={Fingerprint} items={visibleRecords.evidence} render={EvidenceItem} />}
         {activeView === "People" && <PeopleView data={data} visiblePeople={visibleRecords.people} createPerson={createPerson} editPerson={editPerson} earlyInterventionByEmployeeId={earlyInterventionByEmployeeId} />}
-        {activeView === "Officer Profile" && <OfficerProfileView data={data} officerProfiles={officerProfiles} selectedOfficerId={selectedOfficerId} setSelectedOfficerId={setSelectedOfficerId} updateOfficerRiskScore={updateOfficerRiskScore} updateTrainingDeficiencies={updateTrainingDeficiencies} />}
+        {activeView === "Officer Profile" && <OfficerProfileView data={data} officerProfiles={officerProfiles} selectedOfficerId={selectedOfficerId} setSelectedOfficerId={setSelectedOfficerId} updateOfficerRiskScore={updateOfficerRiskScore} updateTrainingDeficiencies={updateTrainingDeficiencies} editPerson={editPerson} />}
         {activeView === "Complaints" && <ComplaintsView data={data} activeCase={activeCase} visibleComplaints={visibleRecords.complaints} createComplaint={submitComplaint} setActiveComplaintId={setActiveComplaintId} />}
         {activeView === "Adjudication" && <AdjudicationTab data={data} activeCase={activeCase} editFinding={editFinding} />}
 
@@ -2974,7 +2974,7 @@ function AdjudicationTab({ data, activeCase, editFinding }) {
   );
 }
 
-function OfficerProfileView({ data, officerProfiles, selectedOfficerId, setSelectedOfficerId, updateOfficerRiskScore, updateTrainingDeficiencies }) {
+function OfficerProfileView({ data, officerProfiles, selectedOfficerId, setSelectedOfficerId, updateOfficerRiskScore, updateTrainingDeficiencies, editPerson }) {
   const profile = selectedOfficerId ? officerProfiles[selectedOfficerId] : null;
 
   if (!data.people.length) {
