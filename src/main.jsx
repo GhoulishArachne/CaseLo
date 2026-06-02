@@ -1377,7 +1377,7 @@ function LinkSection({
           <Plus size={17} /> Add link
         </button>
         <div className="empty-small" style={{ alignSelf: "center" }}>
-          Current: {items.map((x) => x.id).join(", ") || "None"}
+          Current: {items.map((x) => x.name || x.title || x.id).join(", ") || "None"}
         </div>
       </div>
 
@@ -1385,12 +1385,12 @@ function LinkSection({
         <div className="tags" style={{ margin: "10px 0 0" }}>
           {items.map((x) => (
             <span key={x.id}>
-              {x.id}
+              {x.name || x.title || x.id}
               <button
                 type="button"
                 onClick={() => onRemove(x.id)}
                 style={{ marginLeft: 8, border: 0, background: "transparent", color: "#2f7f67", cursor: "pointer", fontWeight: 900 }}
-                aria-label={`Remove ${x.id}`}
+                aria-label={`Remove ${x.name || x.title || x.id}`}
               >
                 ×
               </button>
