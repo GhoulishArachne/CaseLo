@@ -1293,13 +1293,19 @@ function CaseLinking({ activeCase, data, save, setData }) {
           title="Involved personnel"
           icon={UserRound}
           items={involvedPeople}
-          itemLabel={(p) => `${p.id} · ${p.name}`}
+          itemLabel={(p) => `${p.name} · ${p.rank || "Officer"} #${p.badgeNumber || "—"}`}
           text={involvedPersonText}
           setText={setInvolvedPersonText}
           candidates={data.people}
-          candidateValue={(p) => p.id}
-          candidateLabel={(p) => `${p.id} · ${p.name} (${p.rank || "Officer"})`}
-          onAdd={() => updateInvolvedPeople(toggleListField(activeCase.involvedPersonIds, parseCsv(involvedPersonText)).filter(Boolean))}
+          candidateValue={(p) => p.badgeNumber || p.name}
+          candidateLabel={(p) => `${p.name} · ${p.rank || "Officer"} (Badge #${p.badgeNumber || "—"})`}
+          onAdd={() => {
+            const lookupIds = parseCsv(involvedPersonText).map((input) => {
+              const person = data.people.find((p) => p.badgeNumber === input || p.name.toLowerCase() === input.toLowerCase());
+              return person?.id || input;
+            });
+            updateInvolvedPeople(toggleListField(activeCase.involvedPersonIds, lookupIds).filter(Boolean));
+          }}
           onRemove={(id) => removeIdFromField("involvedPersonIds", id)}
         />
 
@@ -1356,7 +1362,7 @@ function LinkSection({
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder={`Enter officer IDs to link (comma-separated). Example: ${candidates.slice(0, 2).map((c) => c.id).join(", ") || "P-001, P-002"}`}
+          placeholder={`Search by badge # or name (comma-separated). Example: ${candidates.slice(0, 2).map((c) => c.badgeNumber || c.name).join(", ") || "201, 202"}`}
         />
       </div>
       <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
