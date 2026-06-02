@@ -311,6 +311,7 @@ const themeColors = [
     name: "Command Operations Center (Recommended)",
     dark: "#0B1220",
     accent: "#3B82F6",
+    text: "#F3F4F6",
     departmentName: "Police Department",
     departmentLogoUrl: "",
     reportHeaderText: "Internal Affairs Investigation",
@@ -321,6 +322,7 @@ const themeColors = [
     name: "Police Headquarters",
     dark: "#111827",
     accent: "#D4AF37",
+    text: "#F3F4F6",
     departmentName: "Police Department",
     departmentLogoUrl: "",
     reportHeaderText: "Internal Affairs Investigation",
@@ -331,6 +333,7 @@ const themeColors = [
     name: "Government Records System",
     dark: "#F3F4F6",
     accent: "#2563EB",
+    text: "#1F2937",
     departmentName: "Police Department",
     departmentLogoUrl: "",
     reportHeaderText: "Internal Affairs Investigation",
@@ -341,6 +344,7 @@ const themeColors = [
     name: "Tactical Operations Center",
     dark: "#050505",
     accent: "#22C55E",
+    text: "#F3F4F6",
     departmentName: "Police Department",
     departmentLogoUrl: "",
     reportHeaderText: "Internal Affairs Investigation",
@@ -351,6 +355,7 @@ const themeColors = [
     name: "Department Coordinator Executive Suite",
     dark: "#0F172A",
     accent: "#94A3B8",
+    text: "#F3F4F6",
     departmentName: "Police Department",
     departmentLogoUrl: "",
     reportHeaderText: "Internal Affairs Investigation",
@@ -361,6 +366,7 @@ const themeColors = [
     name: "Intelligence Bureau",
     dark: "#111827",
     accent: "#06B6D4",
+    text: "#F3F4F6",
     departmentName: "Police Department",
     departmentLogoUrl: "",
     reportHeaderText: "Internal Affairs Investigation",
@@ -371,6 +377,7 @@ const themeColors = [
     name: "Monochrome Professional",
     dark: "#F5F5F5",
     accent: "#1F2937",
+    text: "#1F2937",
     departmentName: "Police Department",
     departmentLogoUrl: "",
     reportHeaderText: "Internal Affairs Investigation",
@@ -381,6 +388,7 @@ const themeColors = [
     name: "Warm Sunset",
     dark: "#FFF8F3",
     accent: "#C2410C",
+    text: "#1F2937",
     departmentName: "Police Department",
     departmentLogoUrl: "",
     reportHeaderText: "Internal Affairs Investigation",
@@ -391,6 +399,7 @@ const themeColors = [
     name: "Cool Arctic",
     dark: "#F0F9FF",
     accent: "#0369A1",
+    text: "#1F2937",
     departmentName: "Police Department",
     departmentLogoUrl: "",
     reportHeaderText: "Internal Affairs Investigation",
@@ -401,6 +410,7 @@ const themeColors = [
     name: "Dark Neon",
     dark: "#0D0D0D",
     accent: "#39FF14",
+    text: "#F3F4F6",
     departmentName: "Police Department",
     departmentLogoUrl: "",
     reportHeaderText: "Internal Affairs Investigation",
@@ -411,6 +421,7 @@ const themeColors = [
     name: "Classic Government",
     dark: "#F9FAFB",
     accent: "#7C2D12",
+    text: "#1F2937",
     departmentName: "Police Department",
     departmentLogoUrl: "",
     reportHeaderText: "Internal Affairs Investigation",
@@ -421,6 +432,7 @@ const themeColors = [
     name: "High-Tech Blue",
     dark: "#0C1929",
     accent: "#00D4FF",
+    text: "#F3F4F6",
     departmentName: "Police Department",
     departmentLogoUrl: "",
     reportHeaderText: "Internal Affairs Investigation",
@@ -883,6 +895,7 @@ function App() {
     const theme = themeColors[themeIndex];
     document.documentElement.style.setProperty("--theme-dark", theme.dark);
     document.documentElement.style.setProperty("--theme-accent", theme.accent);
+    document.documentElement.style.setProperty("--theme-text", theme.text);
     document.documentElement.style.setProperty("--dept-name", theme.departmentName);
     document.documentElement.style.setProperty("--dept-logo-url", theme.departmentLogoUrl ? `url('${theme.departmentLogoUrl}')` : "none");
     document.documentElement.style.setProperty("--report-header", theme.reportHeaderText);
@@ -2009,7 +2022,7 @@ async function createPerson(event) {
         minHeight: "100vh",
         background: "#f3f5f4",
         fontSize: "16px",
-        color: "#5a6b66"
+        color: "var(--theme-text)"
       }}>
         Loading cases...
       </div>
@@ -2119,16 +2132,16 @@ async function createPerson(event) {
             <div style={{ display: "grid", gridTemplateRows: "1fr auto", gap: 12, height: "100%" }}>
               <CaseDetail activeCase={activeCase} caseRecords={caseRecords} data={data} setData={setData} editFinding={editFinding} deleteCase={deleteCase} />
               <div style={{ background: "white", border: "1px solid #dce4e1", borderRadius: 8, padding: 16, maxHeight: "200px", overflowY: "auto" }}>
-                <h4 style={{ margin: "0 0 12px 0", fontSize: 14, fontWeight: 700, color: "#17212b" }}>Evidence</h4>
+                <h4 style={{ margin: "0 0 12px 0", fontSize: 14, fontWeight: 700, color: "var(--theme-text)" }}>Evidence</h4>
                 <div style={{ display: "grid", gap: 8 }}>
                   {caseRecords.evidence?.length ? (
                     caseRecords.evidence.map((item) => (
-                      <div key={item.id} style={{ background: "#f6f9f7", padding: 8, borderRadius: 6, fontSize: 12, color: "#5a6b66" }}>
-                        <strong style={{ color: "#17212b" }}>{item.type}</strong> • {item.source}
+                      <div key={item.id} style={{ background: "#f6f9f7", padding: 8, borderRadius: 6, fontSize: 12, color: "var(--theme-text)" }}>
+                        <strong style={{ color: "var(--theme-text)" }}>{item.type}</strong> • {item.source}
                       </div>
                     ))
                   ) : (
-                    <p style={{ margin: 0, color: "#99a8a1", fontSize: 12 }}>No evidence yet</p>
+                    <p style={{ margin: 0, color: "var(--theme-text)", fontSize: 12 }}>No evidence yet</p>
                   )}
                 </div>
               </div>
@@ -2583,13 +2596,13 @@ function Forms({ activeCase, addItem, createCase, quickAdd, setQuickAdd }) {
         <input name="investigationType" placeholder="Investigation type" />
         <div className="row">
           <div style={{ flex: 1 }}>
-            <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+            <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
               Case Opened (Date)
             </label>
             <input name="opened" type="date" />
           </div>
           <div style={{ flex: 1 }}>
-            <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+            <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
               Case Closed (Date)
             </label>
             <input name="closed" type="date" />
@@ -2630,20 +2643,20 @@ function Forms({ activeCase, addItem, createCase, quickAdd, setQuickAdd }) {
         </div>
         <div className="row">
           <div style={{ flex: 1 }}>
-            <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+            <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
               Date (YYYY-MM-DD)
             </label>
             <input name="source" placeholder="Location or source" disabled={!activeCase} />
           </div>
           <div style={{ flex: 1 }}>
-            <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+            <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
               Event/Discovery Date (YYYY-MM-DD)
             </label>
             <input name="date" type="date" disabled={!activeCase} />
           </div>
         </div>
         <div style={{ marginTop: 10 }}>
-          <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+          <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
             Time (HH:MM - Optional)
           </label>
           <input name="time" type="time" disabled={!activeCase} />
@@ -2913,20 +2926,20 @@ function PeopleView({ data, visiblePeople, createPerson, editPerson, earlyInterv
                           <span className={`pill ${f.severity === "critical" ? "critical" : "needs-review"}`} style={{ fontWeight: 900 }}>
                             {f.type}
                           </span>
-                          <small style={{ color: "#5a6b66" }}>
+                          <small style={{ color: "var(--theme-text)" }}>
                             {f.count} occurrence{f.count === 1 ? "" : "s"}
                             {f.windowStart && f.windowEnd ? ` · ${f.windowStart} → ${f.windowEnd}` : ""}
                           </small>
                         </div>
                       ))}
                       {earlyInterventionByEmployeeId[item.id].summary ? (
-                        <small style={{ color: "#4e605b" }}>
+                        <small style={{ color: "var(--theme-text)" }}>
                           {earlyInterventionByEmployeeId[item.id].summary}
                         </small>
                       ) : null}
                     </div>
                   ) : (
-                    <small style={{ color: "#687872" }}>No early intervention flags</small>
+                    <small style={{ color: "var(--theme-text)" }}>No early intervention flags</small>
                   )}
                 </button>
               </React.Fragment>
@@ -3006,7 +3019,7 @@ function AdjudicationPanel({ caseId, findings, editFinding, people }) {
             }}
           >
             <strong style={{ fontSize: 13 }}>{f.finding}</strong>
-            <small style={{ display: "block", color: "#60716c" }}>{f.id}</small>
+            <small style={{ display: "block", color: "var(--theme-text)" }}>{f.id}</small>
           </button>
         ))}
       </div>
@@ -3063,8 +3076,8 @@ function AdjudicationTab({ data, activeCase, editFinding }) {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: 12 }}>
                 <div>
                   <strong style={{ fontSize: 14 }}>{finding.finding}</strong>
-                  <small style={{ display: "block", color: "#60716c", marginTop: 2 }}>{finding.id} · {finding.caseId}</small>
-                  <small style={{ display: "block", color: "#60716c", marginTop: 4 }}>{finding.description}</small>
+                  <small style={{ display: "block", color: "var(--theme-text)", marginTop: 2 }}>{finding.id} · {finding.caseId}</small>
+                  <small style={{ display: "block", color: "var(--theme-text)", marginTop: 4 }}>{finding.description}</small>
                 </div>
                 <div style={{ display: "flex", gap: 6 }}>
                   <span className={`pill ${finding.commandReviewStatus === "Approved" ? "confirmed" : finding.commandReviewStatus === "Rejected" ? "high" : "pending"}`}>
@@ -3116,8 +3129,8 @@ function OfficerProfileView({ data, officerProfiles, selectedOfficerId, setSelec
                 }}
               >
                 <strong style={{ fontSize: 13, display: "block" }}>{officer.name}</strong>
-                <small style={{ color: "#60716c", display: "block" }}>{officer.rank || "Officer"}</small>
-                <small style={{ color: "#60716c" }}>#{officer.badgeNumber || "—"}</small>
+                <small style={{ color: "var(--theme-text)", display: "block" }}>{officer.rank || "Officer"}</small>
+                <small style={{ color: "var(--theme-text)" }}>#{officer.badgeNumber || "—"}</small>
               </button>
             ))}
           </div>
@@ -3146,7 +3159,7 @@ function OfficerProfileView({ data, officerProfiles, selectedOfficerId, setSelec
               >
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                   <div>
-                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>Rank</label>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>Rank</label>
                     <select name="rank" defaultValue={profile.officer.rank || ""} style={{ width: "100%" }}>
                       <option value="">Select Rank</option>
                       <option value="Chief of Police">Chief of Police</option>
@@ -3161,24 +3174,24 @@ function OfficerProfileView({ data, officerProfiles, selectedOfficerId, setSelec
                     </select>
                   </div>
                   <div>
-                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>Badge #</label>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>Badge #</label>
                     <input name="badgeNumber" type="text" defaultValue={profile.officer.badgeNumber || ""} placeholder="e.g., 201" style={{ width: "100%" }} />
                   </div>
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                   <div>
-                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>Assignment</label>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>Assignment</label>
                     <input name="assignment" type="text" defaultValue={profile.officer.assignment || ""} placeholder="e.g., Patrol Division" style={{ width: "100%" }} />
                   </div>
                   <div>
-                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>Division</label>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>Division</label>
                     <input name="division" type="text" defaultValue={profile.officer.division || ""} placeholder="e.g., Special Operations" style={{ width: "100%" }} />
                   </div>
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>Contact Info</label>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>Contact Info</label>
                   <input name="contact" type="text" defaultValue={profile.officer.contact || ""} placeholder="e.g., phone, email, or address" style={{ width: "100%" }} />
                 </div>
 
@@ -3199,7 +3212,7 @@ function OfficerProfileView({ data, officerProfiles, selectedOfficerId, setSelec
                 { label: "Early Intervention Flags", value: profile.earlyInterventionFlags.length },
               ].map((metric, idx) => (
                 <div key={idx} style={{ background: "#ffffff", border: "1px solid #dce4e1", borderRadius: 8, padding: 16 }}>
-                  <small style={{ color: "#60716c", display: "block", marginBottom: 8 }}>{metric.label}</small>
+                  <small style={{ color: "var(--theme-text)", display: "block", marginBottom: 8 }}>{metric.label}</small>
                   {metric.isScore ? (
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <div
@@ -3252,7 +3265,7 @@ function OfficerProfileView({ data, officerProfiles, selectedOfficerId, setSelec
                   />
                 </div>
                 {profile.riskScoreOverrideDate && (
-                  <small style={{ color: "#60716c" }}>Override date: {profile.riskScoreOverrideDate}</small>
+                  <small style={{ color: "var(--theme-text)" }}>Override date: {profile.riskScoreOverrideDate}</small>
                 )}
               </div>
             </div>
@@ -3294,13 +3307,13 @@ function OfficerProfileView({ data, officerProfiles, selectedOfficerId, setSelec
                   {profile.complaints.slice(0, 10).map((complaint) => (
                     <div key={complaint.id} style={{ padding: 10, border: "1px solid #edf1ef", borderRadius: 6 }}>
                       <strong style={{ fontSize: 13 }}>{complaint.title || complaint.category}</strong>
-                      <small style={{ display: "block", color: "#60716c", marginTop: 4 }}>
+                      <small style={{ display: "block", color: "var(--theme-text)", marginTop: 4 }}>
                         {complaint.id} · {complaint.date || complaint.incident?.dateTime?.slice(0, 10)} · {complaint.complaintType}
                       </small>
                     </div>
                   ))}
                   {profile.complaints.length > 10 && (
-                    <small style={{ color: "#60716c" }}>+{profile.complaints.length - 10} more complaints</small>
+                    <small style={{ color: "var(--theme-text)" }}>+{profile.complaints.length - 10} more complaints</small>
                   )}
                 </div>
               </div>
@@ -3316,7 +3329,7 @@ function OfficerProfileView({ data, officerProfiles, selectedOfficerId, setSelec
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}>
                         <div>
                           <strong style={{ fontSize: 13 }}>{finding.finding}</strong>
-                          <small style={{ display: "block", color: "#60716c", marginTop: 2 }}>
+                          <small style={{ display: "block", color: "var(--theme-text)", marginTop: 2 }}>
                             {finding.id} · {finding.dateCreated}
                           </small>
                         </div>
@@ -3325,7 +3338,7 @@ function OfficerProfileView({ data, officerProfiles, selectedOfficerId, setSelec
                         </span>
                       </div>
                       {finding.description && (
-                        <small style={{ display: "block", color: "#60716c", marginTop: 6 }}>{finding.description}</small>
+                        <small style={{ display: "block", color: "var(--theme-text)", marginTop: 6 }}>{finding.description}</small>
                       )}
                     </div>
                   ))}
@@ -3334,7 +3347,7 @@ function OfficerProfileView({ data, officerProfiles, selectedOfficerId, setSelec
             )}
           </div>
         ) : (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", color: "#687872" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", color: "var(--theme-text)" }}>
             Select an officer to view their profile
           </div>
         )}
@@ -3382,12 +3395,12 @@ function ViolationLibraryPanel({ violations, onEdit, onDelete }) {
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
           <thead>
             <tr style={{ borderBottom: "2px solid #dce4e1" }}>
-              <th style={{ textAlign: "left", padding: "8px 0", fontWeight: 700, color: "#60716c" }}>Code</th>
-              <th style={{ textAlign: "left", padding: "8px 0", fontWeight: 700, color: "#60716c" }}>Name</th>
-              <th style={{ textAlign: "left", padding: "8px 0", fontWeight: 700, color: "#60716c" }}>Category</th>
-              <th style={{ textAlign: "left", padding: "8px 0", fontWeight: 700, color: "#60716c" }}>Severity</th>
-              <th style={{ textAlign: "left", padding: "8px 0", fontWeight: 700, color: "#60716c" }}>Default Discipline</th>
-              <th style={{ textAlign: "center", padding: "8px 0", fontWeight: 700, color: "#60716c" }}>Actions</th>
+              <th style={{ textAlign: "left", padding: "8px 0", fontWeight: 700, color: "var(--theme-text)" }}>Code</th>
+              <th style={{ textAlign: "left", padding: "8px 0", fontWeight: 700, color: "var(--theme-text)" }}>Name</th>
+              <th style={{ textAlign: "left", padding: "8px 0", fontWeight: 700, color: "var(--theme-text)" }}>Category</th>
+              <th style={{ textAlign: "left", padding: "8px 0", fontWeight: 700, color: "var(--theme-text)" }}>Severity</th>
+              <th style={{ textAlign: "left", padding: "8px 0", fontWeight: 700, color: "var(--theme-text)" }}>Default Discipline</th>
+              <th style={{ textAlign: "center", padding: "8px 0", fontWeight: 700, color: "var(--theme-text)" }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -3473,7 +3486,7 @@ function ViolationForm({ violation, onSubmit, onCancel, allViolations = [] }) {
         style={{ display: "grid", gap: 10 }}
       >
         <div>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
             Code
           </label>
           <input
@@ -3485,7 +3498,7 @@ function ViolationForm({ violation, onSubmit, onCancel, allViolations = [] }) {
           />
         </div>
         <div>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
             Name *
           </label>
           <input
@@ -3496,7 +3509,7 @@ function ViolationForm({ violation, onSubmit, onCancel, allViolations = [] }) {
           />
         </div>
         <div>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
             Description
           </label>
           <textarea
@@ -3508,7 +3521,7 @@ function ViolationForm({ violation, onSubmit, onCancel, allViolations = [] }) {
         </div>
         <div className="row">
           <div style={{ flex: 1 }}>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
               Category
             </label>
             <select name="category" defaultValue={violation?.category || "Other"}>
@@ -3518,7 +3531,7 @@ function ViolationForm({ violation, onSubmit, onCancel, allViolations = [] }) {
             </select>
           </div>
           <div style={{ flex: 1 }}>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
               Severity
             </label>
             <select name="severityLevel" defaultValue={violation?.severityLevel || "Medium"}>
@@ -3529,7 +3542,7 @@ function ViolationForm({ violation, onSubmit, onCancel, allViolations = [] }) {
           </div>
         </div>
         <div>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
             Default Discipline
           </label>
           <select name="defaultDisciplineTemplate" defaultValue={violation?.defaultDisciplineTemplate || "None"}>
@@ -3539,7 +3552,7 @@ function ViolationForm({ violation, onSubmit, onCancel, allViolations = [] }) {
           </select>
         </div>
         <div>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
             Additional Notes
           </label>
           <textarea
@@ -3572,12 +3585,12 @@ function PolicyLibraryPanel({ policies, onEdit, onDelete }) {
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
           <thead>
             <tr style={{ borderBottom: "2px solid #dce4e1" }}>
-              <th style={{ textAlign: "left", padding: "8px 0", fontWeight: 700, color: "#60716c" }}>Code</th>
-              <th style={{ textAlign: "left", padding: "8px 0", fontWeight: 700, color: "#60716c" }}>Title</th>
-              <th style={{ textAlign: "left", padding: "8px 0", fontWeight: 700, color: "#60716c" }}>Category</th>
-              <th style={{ textAlign: "left", padding: "8px 0", fontWeight: 700, color: "#60716c" }}>Version</th>
-              <th style={{ textAlign: "left", padding: "8px 0", fontWeight: 700, color: "#60716c" }}>Linked Violations</th>
-              <th style={{ textAlign: "center", padding: "8px 0", fontWeight: 700, color: "#60716c" }}>Actions</th>
+              <th style={{ textAlign: "left", padding: "8px 0", fontWeight: 700, color: "var(--theme-text)" }}>Code</th>
+              <th style={{ textAlign: "left", padding: "8px 0", fontWeight: 700, color: "var(--theme-text)" }}>Title</th>
+              <th style={{ textAlign: "left", padding: "8px 0", fontWeight: 700, color: "var(--theme-text)" }}>Category</th>
+              <th style={{ textAlign: "left", padding: "8px 0", fontWeight: 700, color: "var(--theme-text)" }}>Version</th>
+              <th style={{ textAlign: "left", padding: "8px 0", fontWeight: 700, color: "var(--theme-text)" }}>Linked Violations</th>
+              <th style={{ textAlign: "center", padding: "8px 0", fontWeight: 700, color: "var(--theme-text)" }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -3642,7 +3655,7 @@ function PolicyForm({ policy, onSubmit, onCancel, violations }) {
         style={{ display: "grid", gap: 10 }}
       >
         <div>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
             Code {policy && `(${policy.id})`}
           </label>
           <input
@@ -3654,7 +3667,7 @@ function PolicyForm({ policy, onSubmit, onCancel, violations }) {
           />
         </div>
         <div>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
             Title *
           </label>
           <input
@@ -3665,7 +3678,7 @@ function PolicyForm({ policy, onSubmit, onCancel, violations }) {
           />
         </div>
         <div>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
             Description
           </label>
           <textarea
@@ -3676,7 +3689,7 @@ function PolicyForm({ policy, onSubmit, onCancel, violations }) {
           />
         </div>
         <div>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
             Policy URL
           </label>
           <input
@@ -3688,7 +3701,7 @@ function PolicyForm({ policy, onSubmit, onCancel, violations }) {
         </div>
         <div className="row">
           <div style={{ flex: 1 }}>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
               Category
             </label>
             <select name="category" defaultValue={policy?.category || "Other"}>
@@ -3698,7 +3711,7 @@ function PolicyForm({ policy, onSubmit, onCancel, violations }) {
             </select>
           </div>
           <div style={{ flex: 1 }}>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
               Version
             </label>
             <input
@@ -3709,7 +3722,7 @@ function PolicyForm({ policy, onSubmit, onCancel, violations }) {
           </div>
         </div>
         <div>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
             Effective Date
           </label>
           <input
@@ -3719,7 +3732,7 @@ function PolicyForm({ policy, onSubmit, onCancel, violations }) {
           />
         </div>
         <div>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
             Document Source
           </label>
           <input
@@ -3729,7 +3742,7 @@ function PolicyForm({ policy, onSubmit, onCancel, violations }) {
           />
         </div>
         <div>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
             Linked Violations (comma-separated)
           </label>
           <input
@@ -3737,10 +3750,10 @@ function PolicyForm({ policy, onSubmit, onCancel, violations }) {
             defaultValue={policy?.linkedViolationIds?.join(", ") || ""}
             placeholder="e.g., COND, EXFO, VIOL-001"
           />
-          <small style={{ color: "#60716c", display: "block", marginTop: 4 }}>Enter violation codes separated by commas</small>
+          <small style={{ color: "var(--theme-text)", display: "block", marginTop: 4 }}>Enter violation codes separated by commas</small>
         </div>
         <div>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
             Additional Notes
           </label>
           <textarea
@@ -3774,7 +3787,7 @@ function TemplateLibraryPanel({ templates, onEdit, onDelete }) {
           <div key={t.id} style={{ border: "1px solid #dce4e1", borderRadius: 6, padding: 12 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 8 }}>
               <div>
-                <strong style={{ fontSize: 14, color: "#17212b" }}>{t.name}</strong>
+                <strong style={{ fontSize: 14, color: "var(--theme-text)" }}>{t.name}</strong>
                 <small style={{ display: "block", color: "#2f7f67", fontWeight: 700 }}>{t.id}</small>
               </div>
               <div style={{ display: "flex", gap: 8 }}>
@@ -3806,7 +3819,7 @@ function TemplateLibraryPanel({ templates, onEdit, onDelete }) {
                 </button>
               </div>
             </div>
-            <small style={{ color: "#60716c", display: "block", marginBottom: 4 }}>
+            <small style={{ color: "var(--theme-text)", display: "block", marginBottom: 4 }}>
               {t.category} · {t.estimatedInvestigationDays} days
             </small>
             {t.linkedViolations.length > 0 && (
@@ -3835,7 +3848,7 @@ function TemplateForm({ template, onSubmit, onCancel }) {
         style={{ display: "grid", gap: 10 }}
       >
         <div>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
             Code {template && `(${template.id})`}
           </label>
           <input
@@ -3847,7 +3860,7 @@ function TemplateForm({ template, onSubmit, onCancel }) {
           />
         </div>
         <div>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
             Template Name *
           </label>
           <input
@@ -3858,7 +3871,7 @@ function TemplateForm({ template, onSubmit, onCancel }) {
           />
         </div>
         <div>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
             Description
           </label>
           <textarea
@@ -3870,7 +3883,7 @@ function TemplateForm({ template, onSubmit, onCancel }) {
         </div>
         <div className="row">
           <div style={{ flex: 1 }}>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
               Category
             </label>
             <select name="category" defaultValue={template?.category || "General"}>
@@ -3880,7 +3893,7 @@ function TemplateForm({ template, onSubmit, onCancel }) {
             </select>
           </div>
           <div style={{ flex: 1 }}>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
               Estimated Days
             </label>
             <input
@@ -3893,7 +3906,7 @@ function TemplateForm({ template, onSubmit, onCancel }) {
           </div>
         </div>
         <div>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
             Investigation Scope
           </label>
           <textarea
@@ -3904,7 +3917,7 @@ function TemplateForm({ template, onSubmit, onCancel }) {
           />
         </div>
         <div>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
             Key Questions (one per line)
           </label>
           <textarea
@@ -3915,7 +3928,7 @@ function TemplateForm({ template, onSubmit, onCancel }) {
           />
         </div>
         <div>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
             Required Evidence Types (one per line)
           </label>
           <textarea
@@ -3927,7 +3940,7 @@ function TemplateForm({ template, onSubmit, onCancel }) {
         </div>
         <div className="row">
           <div style={{ flex: 1 }}>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
               Linked Violations (comma-separated)
             </label>
             <input
@@ -3937,7 +3950,7 @@ function TemplateForm({ template, onSubmit, onCancel }) {
             />
           </div>
           <div style={{ flex: 1 }}>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
               Linked Policies (comma-separated)
             </label>
             <input
@@ -4026,7 +4039,7 @@ function CustomDropdownManager({ data, onUpdateDropdown, onAddOption, onRemoveOp
           {customizableDropdowns.map((dropdown) => (
             <div key={dropdown.key} style={{ border: "1px solid #dce4e1", borderRadius: 6, padding: 12 }}>
               <strong style={{ fontSize: 13 }}>{dropdown.label}</strong>
-              <small style={{ display: "block", color: "#60716c", marginBottom: 10 }}>{dropdown.description}</small>
+              <small style={{ display: "block", color: "var(--theme-text)", marginBottom: 10 }}>{dropdown.description}</small>
               <div style={{ display: "grid", gap: 8 }}>
                 {[...dropdown.hardcoded, ...(data.customOptions[dropdown.key] || [])].map((option) => (
                   <div
@@ -4095,7 +4108,7 @@ function CustomDropdownManager({ data, onUpdateDropdown, onAddOption, onRemoveOp
       {tab === "create" && (
         <div style={{ display: "grid", gap: 12 }}>
           <div>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
               Dropdown Name
             </label>
             <input
@@ -4104,12 +4117,12 @@ function CustomDropdownManager({ data, onUpdateDropdown, onAddOption, onRemoveOp
               onChange={(e) => setNewDropdownName(e.target.value)}
               placeholder="e.g., DepartmentUnits (no spaces or special chars)"
             />
-            <small style={{ color: "#60716c", display: "block", marginTop: 4 }}>
+            <small style={{ color: "var(--theme-text)", display: "block", marginTop: 4 }}>
               Used internally; will be displayed nicely in forms
             </small>
           </div>
           <div>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
               Options (one per line)
             </label>
             <textarea
@@ -4267,10 +4280,10 @@ function BrandingSettingsPanel({ themeIndex, themeColors, setThemeIndex }) {
 
       <div style={{ display: "grid", gap: 16 }}>
         <div style={{ paddingBottom: 16, borderBottom: "2px solid #dce4e1" }}>
-          <h4 style={{ margin: "0 0 16px 0", color: "#17212b" }}>Global Branding (All Themes)</h4>
+          <h4 style={{ margin: "0 0 16px 0", color: "var(--theme-text)" }}>Global Branding (All Themes)</h4>
 
           <div>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "#60716c", textTransform: "uppercase" }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "var(--theme-text)", textTransform: "uppercase" }}>
               Department Name
             </label>
             <input
@@ -4282,7 +4295,7 @@ function BrandingSettingsPanel({ themeIndex, themeColors, setThemeIndex }) {
           </div>
 
           <div style={{ marginTop: 12 }}>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "#60716c", textTransform: "uppercase" }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "var(--theme-text)", textTransform: "uppercase" }}>
               Department Logo URL
             </label>
             <input
@@ -4293,7 +4306,7 @@ function BrandingSettingsPanel({ themeIndex, themeColors, setThemeIndex }) {
             />
             {globalBranding.departmentLogoUrl && (
               <div style={{ marginTop: 8, padding: 8, background: "#f6f9f7", borderRadius: 6 }}>
-                <small style={{ color: "#60716c" }}>Logo Preview:</small>
+                <small style={{ color: "var(--theme-text)" }}>Logo Preview:</small>
                 <img
                   src={globalBranding.departmentLogoUrl}
                   alt="Department Logo"
@@ -4305,7 +4318,7 @@ function BrandingSettingsPanel({ themeIndex, themeColors, setThemeIndex }) {
           </div>
 
           <div style={{ marginTop: 12 }}>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "#60716c", textTransform: "uppercase" }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "var(--theme-text)", textTransform: "uppercase" }}>
               Report Header Text
             </label>
             <input
@@ -4317,7 +4330,7 @@ function BrandingSettingsPanel({ themeIndex, themeColors, setThemeIndex }) {
           </div>
 
           <div style={{ marginTop: 12 }}>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "#60716c", textTransform: "uppercase" }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "var(--theme-text)", textTransform: "uppercase" }}>
               Signature Block Text
             </label>
             <input
@@ -4330,10 +4343,10 @@ function BrandingSettingsPanel({ themeIndex, themeColors, setThemeIndex }) {
         </div>
 
         <div style={{ paddingTop: 16 }}>
-          <h4 style={{ margin: "0 0 16px 0", color: "#17212b" }}>Theme Colors (Current: {pendingChanges.name})</h4>
+          <h4 style={{ margin: "0 0 16px 0", color: "var(--theme-text)" }}>Theme Colors (Current: {pendingChanges.name})</h4>
 
           <div>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "#60716c", textTransform: "uppercase" }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "var(--theme-text)", textTransform: "uppercase" }}>
               Primary Accent Color
             </label>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -4354,7 +4367,7 @@ function BrandingSettingsPanel({ themeIndex, themeColors, setThemeIndex }) {
           </div>
 
         <div>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "#60716c", textTransform: "uppercase" }}>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "var(--theme-text)", textTransform: "uppercase" }}>
             Secondary Accent Color
           </label>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -4381,7 +4394,7 @@ function BrandingSettingsPanel({ themeIndex, themeColors, setThemeIndex }) {
               <img src={globalBranding.departmentLogoUrl} alt="Logo" style={{ maxHeight: 40, marginBottom: 8 }} />
             )}
             <div style={{ fontWeight: 700, marginBottom: 4 }}>{globalBranding.departmentName}</div>
-            <div style={{ color: "#60716c", marginBottom: 4 }}>{globalBranding.reportHeaderText}</div>
+            <div style={{ color: "var(--theme-text)", marginBottom: 4 }}>{globalBranding.reportHeaderText}</div>
             <div style={{ borderTop: "1px solid #dce4e1", paddingTop: 8, marginTop: 8 }}>
               {globalBranding.signatureBlockText}_________________
             </div>
@@ -4525,7 +4538,7 @@ function SettingsView({ themeIndex, setThemeIndex, data, setData, createViolatio
                     background: theme.accent,
                   }}
                 />
-                <span style={{ fontSize: 14, fontWeight: 600, color: "#17212b" }}>
+                <span style={{ fontSize: 14, fontWeight: 600, color: "var(--theme-text)" }}>
                   {theme.name}
                 </span>
               </button>
@@ -4537,7 +4550,7 @@ function SettingsView({ themeIndex, setThemeIndex, data, setData, createViolatio
 
         <div className="panel" style={{ padding: 16 }}>
           <h3 style={{ margin: "0 0 16px" }}>Database Maintenance</h3>
-          <p style={{ fontSize: 13, color: "#60716c", marginBottom: 12 }}>
+          <p style={{ fontSize: 13, color: "var(--theme-text)", marginBottom: 12 }}>
             Clean up orphaned records (tasks, evidence, notes, events, findings) that belong to deleted cases.
           </p>
           <button
@@ -4683,13 +4696,13 @@ function ComplaintsView({ data, activeCase, visibleComplaints, createComplaint, 
             <div style={{ marginTop: 10 }}>
               <div className="row">
                 <div style={{ flex: 1 }}>
-                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
                     Incident Location
                   </label>
                   <input name="incidentLocation" placeholder="Where the incident occurred" defaultValue={"Unspecified"} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
                     Incident Date (YYYY-MM-DD)
                   </label>
                   <input name="incidentDate" type="date" placeholder="When the incident occurred" />
@@ -4697,7 +4710,7 @@ function ComplaintsView({ data, activeCase, visibleComplaints, createComplaint, 
               </div>
               <div className="row" style={{ marginTop: 10 }}>
                 <div style={{ flex: 1 }}>
-                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "#60716c", textTransform: "uppercase" }}>
+                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
                     Incident Time (HH:MM)
                   </label>
                   <input name="incidentTime" type="time" placeholder="Time of incident" />
@@ -4821,7 +4834,7 @@ function AppWrapper() {
         minHeight: "100vh",
         background: "#f3f5f4",
         fontSize: "16px",
-        color: "#5a6b66"
+        color: "var(--theme-text)"
       }}>
         Loading...
       </div>
@@ -4851,7 +4864,7 @@ function AppWrapper() {
           gap: "6px",
           fontSize: "12px",
           fontWeight: 600,
-          color: "#60716c",
+          color: "var(--theme-text)",
         }}
         title={`Logged in as ${user?.email}`}
       >
