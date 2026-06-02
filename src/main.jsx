@@ -5438,7 +5438,7 @@ function AppWrapper() {
         style={{
           position: "absolute",
           top: "24px",
-          right: "12px",
+          right: "240px",
           zIndex: 1000,
           background: "white",
           border: "1px solid #dce4e1",
