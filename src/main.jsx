@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import {
   AlertCircle,
@@ -20,8 +20,25 @@ import {
   Tag,
   Trash2,
   UserRound,
+  LogOut,
 } from "lucide-react";
 import "./styles.css";
+import { AuthProvider, useAuth } from "./AuthContext";
+import { LoginForm } from "./LoginForm";
+import {
+  casesService,
+  complaintsService,
+  peopleService,
+  evidenceService,
+  eventsService,
+  notesService,
+  tasksService,
+  findingsService,
+  violationsService,
+  policiesService,
+  templatesService,
+  customOptionsService,
+} from "./supabaseService";
 
 const seedData = {
   cases: [],
@@ -238,7 +255,8 @@ const seedData = {
   },
 };
 
-const storeKey = "case-logger-data-v2";
+// Data is now stored in Supabase, not localStorage
+// const storeKey = "case-logger-data-v2";
 const caseStatuses = [
   "Intake",
   "Preliminary Review",
@@ -544,21 +562,74 @@ function cleanupOrphanedRecords(data) {
   };
 }
 
-function loadData() {
+async function loadDataFromSupabase() {
   try {
-    const saved = localStorage.getItem(storeKey);
-    const normalized = saved ? normalizeData(JSON.parse(saved)) : seedData;
-    return cleanupOrphanedRecords(normalized);
-  } catch {
+    const [
+      { data: cases },
+      { data: complaints },
+      { data: people },
+      { data: evidence },
+      { data: events },
+      { data: notes },
+      { data: tasks },
+      { data: findings },
+      { data: violations },
+      { data: policies },
+      { data: templates },
+      { data: customOpts },
+    ] = await Promise.all([
+      casesService.getAll(),
+      complaintsService.getAll(),
+      peopleService.getAll(),
+      evidenceService.getAll(),
+      eventsService.getAll(),
+      notesService.getAll(),
+      tasksService.getAll(),
+      findingsService.getAll(),
+      violationsService.getAll(),
+      policiesService.getAll(),
+      templatesService.getAll(),
+      customOptionsService.getAll(),
+    ]);
+
+    return {
+      cases: cases || [],
+      complaints: complaints || [],
+      people: people || [],
+      evidence: evidence || [],
+      events: events || [],
+      notes: notes || [],
+      tasks: tasks || [],
+      findings: findings || [],
+      violations: violations || [],
+      policies: policies || [],
+      investigationTemplates: templates || [],
+      customOptions: customOpts || [],
+    };
+  } catch (error) {
+    console.error("Failed to load data from Supabase:", error);
     return seedData;
   }
 }
 
 function App() {
-  const [data, setData] = useState(loadData);
-  const [activeCaseId, setActiveCaseId] = useState(data.cases[0]?.id ?? "");
-  const [activeComplaintId, setActiveComplaintId] = useState(data.complaints?.[0]?.id ?? "");
+  const [data, setData] = useState(seedData);
+  const [loading, setLoading] = useState(true);
+  const [activeCaseId, setActiveCaseId] = useState("");
+  const [activeComplaintId, setActiveComplaintId] = useState("");
   const [activeView, setActiveView] = useState("Dashboard");
+
+  // Load data from Supabase on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      const loadedData = await loadDataFromSupabase();
+      setData(loadedData);
+      setActiveCaseId(loadedData.cases[0]?.id ?? "");
+      setActiveComplaintId(loadedData.complaints?.[0]?.id ?? "");
+      setLoading(false);
+    };
+    fetchData();
+  }, []);
   const [query, setQuery] = useState("");
   const [caseFilter, setCaseFilter] = useState("All");
   const [quickAdd, setQuickAdd] = useState("evidence");
@@ -587,9 +658,30 @@ function App() {
 
   const [selectedOfficerId, setSelectedOfficerId] = useState(null);
 
+  async function syncToSupabase(dataToSync) {
+    try {
+      // Sync cases
+      if (dataToSync.cases?.length > 0) {
+        for (const caseItem of dataToSync.cases) {
+          const existing = await casesService.getOne(caseItem.id);
+          if (existing.data) {
+            await casesService.update(caseItem.id, caseItem);
+          } else {
+            await casesService.create(caseItem);
+          }
+        }
+      }
+      // Note: Full sync of all collections would go here
+      // For MVP, we focus on cases sync
+    } catch (error) {
+      console.warn("Sync to Supabase failed:", error);
+    }
+  }
+
   function save(next) {
     setData(next);
-    localStorage.setItem(storeKey, JSON.stringify(next));
+    // Optional: Sync to Supabase (commented out for now to avoid conflicts)
+    // syncToSupabase(next);
   }
 
   function createCase(event) {
@@ -4088,4 +4180,62 @@ function ComplaintsView({ data, activeCase, visibleComplaints, createComplaint, 
 }
 
 
-createRoot(document.getElementById("root")).render(<App />);
+function AppWrapper() {
+  const { isAuthenticated, loading, logout, user } = useAuth();
+
+  if (loading) {
+    return (
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "100vh",
+        background: "#f3f5f4",
+        fontSize: "16px",
+        color: "#5a6b66"
+      }}>
+        Loading...
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <LoginForm />;
+  }
+
+  return (
+    <div style={{ position: "relative" }}>
+      <button
+        onClick={logout}
+        style={{
+          position: "absolute",
+          top: "12px",
+          right: "28px",
+          zIndex: 100,
+          background: "transparent",
+          border: "1px solid #dce4e1",
+          padding: "8px 12px",
+          borderRadius: "6px",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          gap: "6px",
+          fontSize: "12px",
+          fontWeight: 600,
+          color: "#60716c",
+        }}
+        title={`Logged in as ${user?.email}`}
+      >
+        <LogOut size={16} />
+        Sign out
+      </button>
+      <App />
+    </div>
+  );
+}
+
+createRoot(document.getElementById("root")).render(
+  <AuthProvider>
+    <AppWrapper />
+  </AuthProvider>
+);
