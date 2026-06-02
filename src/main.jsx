@@ -387,6 +387,86 @@ const themeColors = [
     signatureBlockText: "Authorized by: ",
     accentSecondaryColor: "#1D4ED8",
   },
+  {
+    name: "Monochrome Professional",
+    dark: "#F5F5F5",
+    accent: "#1F2937",
+    departmentName: "Police Department",
+    departmentLogoUrl: "",
+    reportHeaderText: "Internal Affairs Investigation",
+    signatureBlockText: "Authorized by: ",
+    accentSecondaryColor: "#6B7280",
+  },
+  {
+    name: "High Contrast Accessibility",
+    dark: "#FFFFFF",
+    accent: "#0000FF",
+    departmentName: "Police Department",
+    departmentLogoUrl: "",
+    reportHeaderText: "Internal Affairs Investigation",
+    signatureBlockText: "Authorized by: ",
+    accentSecondaryColor: "#FF0000",
+  },
+  {
+    name: "Warm Sunset",
+    dark: "#FFF8F3",
+    accent: "#C2410C",
+    departmentName: "Police Department",
+    departmentLogoUrl: "",
+    reportHeaderText: "Internal Affairs Investigation",
+    signatureBlockText: "Authorized by: ",
+    accentSecondaryColor: "#EA580C",
+  },
+  {
+    name: "Cool Arctic",
+    dark: "#F0F9FF",
+    accent: "#0369A1",
+    departmentName: "Police Department",
+    departmentLogoUrl: "",
+    reportHeaderText: "Internal Affairs Investigation",
+    signatureBlockText: "Authorized by: ",
+    accentSecondaryColor: "#06B6D4",
+  },
+  {
+    name: "Dark Neon",
+    dark: "#0D0D0D",
+    accent: "#39FF14",
+    departmentName: "Police Department",
+    departmentLogoUrl: "",
+    reportHeaderText: "Internal Affairs Investigation",
+    signatureBlockText: "Authorized by: ",
+    accentSecondaryColor: "#FF10F0",
+  },
+  {
+    name: "Classic Government",
+    dark: "#F9FAFB",
+    accent: "#7C2D12",
+    departmentName: "Police Department",
+    departmentLogoUrl: "",
+    reportHeaderText: "Internal Affairs Investigation",
+    signatureBlockText: "Authorized by: ",
+    accentSecondaryColor: "#B45309",
+  },
+  {
+    name: "Modern Minimal",
+    dark: "#FAFAFA",
+    accent: "#2563EB",
+    departmentName: "Police Department",
+    departmentLogoUrl: "",
+    reportHeaderText: "Internal Affairs Investigation",
+    signatureBlockText: "Authorized by: ",
+    accentSecondaryColor: "#1E40AF",
+  },
+  {
+    name: "High-Tech Blue",
+    dark: "#0C1929",
+    accent: "#00D4FF",
+    departmentName: "Police Department",
+    departmentLogoUrl: "",
+    reportHeaderText: "Internal Affairs Investigation",
+    signatureBlockText: "Authorized by: ",
+    accentSecondaryColor: "#0084FF",
+  },
 ];
 
 const findingTypes = ["Sustained", "Not Sustained", "Exonerated", "Unfounded", "Policy Failure"];
@@ -2249,48 +2329,96 @@ async function createPerson(event) {
   }
 
   return (
-    <main className="shell">
-      <aside className="sidebar">
-        <div className="brand">
-          <ShieldCheck size={28} />
+    <main style={{ display: "grid", gridTemplateRows: "80px 1fr", minHeight: "100vh", background: "var(--theme-light)" }}>
+      {/* Top Navigation Bar */}
+      <header style={{
+        display: "grid",
+        gridTemplateColumns: "1fr auto 1fr",
+        alignItems: "center",
+        gap: 20,
+        padding: "0 24px",
+        borderBottom: `2px solid var(--theme-accent)`,
+        background: "white"
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <ShieldCheck size={24} color="var(--theme-accent)" />
           <div>
-            <strong>Case Logger</strong>
-            <span>Evidence workspace</span>
+            <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "var(--theme-dark)" }}>Case Logger</p>
+            <p style={{ margin: "2px 0 0 0", fontSize: 11, color: "#999", fontWeight: 500 }}>Evidence & Investigation</p>
           </div>
         </div>
-        <nav>
+
+        <div className="searchbox" style={{ width: 300 }}>
+          <Search size={18} />
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search cases, people, complaints..." />
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 12, justifyContent: "flex-end" }}>
+          {themeColors[themeIndex]?.departmentLogoUrl && (
+            <img
+              src={themeColors[themeIndex].departmentLogoUrl}
+              alt="Department Logo"
+              style={{ height: 36, width: "auto", borderRadius: 4 }}
+              onError={() => {}}
+            />
+          )}
+          <div style={{ textAlign: "right" }}>
+            <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "var(--theme-dark)" }}>
+              {themeColors[themeIndex]?.departmentName || "Police Department"}
+            </p>
+            <p style={{ margin: "2px 0 0 0", fontSize: 10, color: "#999" }}>
+              {activeView}
+            </p>
+          </div>
+        </div>
+      </header>
+
+      {/* Horizontal Navigation Tabs */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "auto 1fr",
+        alignItems: "center",
+        padding: "0 24px",
+        borderBottom: `1px solid #e5e7eb`,
+        background: "white",
+        gap: 0,
+        position: "absolute",
+        top: 80,
+        left: 0,
+        right: 0,
+        height: 50,
+        zIndex: 10
+      }}>
+        <nav style={{ display: "flex", gap: 2, overflow: "auto" }}>
           {navItems.map((item) => (
-            <button key={item} className={item === activeView ? "active" : ""} onClick={() => setActiveView(item)}>
+            <button
+              key={item}
+              onClick={() => setActiveView(item)}
+              style={{
+                all: "unset",
+                padding: "12px 16px",
+                fontSize: 13,
+                fontWeight: item === activeView ? 700 : 500,
+                color: item === activeView ? "var(--theme-accent)" : "#666",
+                borderBottom: item === activeView ? `3px solid var(--theme-accent)` : "3px solid transparent",
+                cursor: "pointer",
+                transition: "all 0.2s",
+                whiteSpace: "nowrap"
+              }}
+            >
               {item}
             </button>
           ))}
         </nav>
-      </aside>
+      </div>
 
-      <section className="workspace">
-        <header className="topbar">
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            {themeColors[themeIndex]?.departmentLogoUrl && (
-              <img
-                src={themeColors[themeIndex].departmentLogoUrl}
-                alt="Department Logo"
-                style={{ height: 40, width: "auto", borderRadius: 4 }}
-                onError={() => {}}
-              />
-            )}
-            <div>
-              <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--theme-dark)" }}>
-                {themeColors[themeIndex]?.departmentName || "Police Department"}
-              </p>
-              <p style={{ margin: "4px 0 0 0", fontSize: 12, color: "#60716c" }}>Investigation Control</p>
-            </div>
-          </div>
-          <div className="searchbox">
-            <Search size={18} />
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search cases, tags, summaries" />
-          </div>
-        </header>
-
+      {/* Main Content Area */}
+      <section style={{
+        gridRow: 2,
+        overflow: "auto",
+        marginTop: 50,
+        padding: "24px"
+      }}>
         {activeView === "Dashboard" && (
           <div style={{ padding: "24px", background: "var(--theme-light)" }}>
             <MetricGrid metrics={metrics} />
