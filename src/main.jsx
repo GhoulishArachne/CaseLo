@@ -72,7 +72,7 @@ const seedData = {
   findings: [],
   violations: [
     {
-      id: "VC-001",
+      id: "COND",
       name: "Conduct Unbecoming",
       description: "Officer engaged in conduct that is unbecoming to a member of the department, or conduct that would reflect adversely upon the department.",
       category: "Conduct",
@@ -81,7 +81,7 @@ const seedData = {
       notes: "",
     },
     {
-      id: "VC-002",
+      id: "NEGL",
       name: "Neglect of Duty",
       description: "Officer failed to perform assigned duties or responsibilities with diligence and competence required of a police officer.",
       category: "Performance",
@@ -90,7 +90,7 @@ const seedData = {
       notes: "",
     },
     {
-      id: "VC-003",
+      id: "CORR",
       name: "Corruption",
       description: "Officer engaged in corrupt practices, including solicitation or acceptance of bribes, extortion, or use of official position for personal gain.",
       category: "Integrity",
@@ -99,7 +99,7 @@ const seedData = {
       notes: "",
     },
     {
-      id: "VC-004",
+      id: "TRUTH",
       name: "Truthfulness Violation",
       description: "Officer made false or misleading statements, reports, or testimony in an official capacity.",
       category: "Integrity",
@@ -108,7 +108,7 @@ const seedData = {
       notes: "",
     },
     {
-      id: "VC-005",
+      id: "EXFO",
       name: "Excessive Force",
       description: "Officer used force that exceeded what was necessary or reasonable under the circumstances.",
       category: "Conduct",
@@ -159,7 +159,7 @@ const seedData = {
       title: "Harassment and Discrimination Prevention",
       description: "Policy prohibiting harassment, discrimination, and unprofessional conduct",
       url: "https://example.com/policies/harassment-prevention.pdf",
-      linkedViolationIds: ["VC-001"],
+      linkedViolationIds: ["COND"],
       category: "Harassment",
       version: "2.0",
       effectiveDate: "2023-09-01",
@@ -182,7 +182,7 @@ const seedData = {
         "Were verbal warnings given prior to use of force?"
       ],
       requiredEvidenceTypes: ["Body camera footage", "Dash camera footage", "Witness statements", "Medical reports", "Scene photographs", "Officer statement"],
-      linkedViolations: ["VC-005"],
+      linkedViolations: ["EXFO"],
       linkedPolicies: ["POL-001"],
       estimatedInvestigationDays: 14,
       createdBy: "IA Command",
@@ -242,7 +242,7 @@ const seedData = {
         "What is the impact on the complainant's working conditions?"
       ],
       requiredEvidenceTypes: ["Complainant statement", "Witness statements", "Communications (emails, texts, messages)", "Work records", "Prior complaints", "Timeline documentation"],
-      linkedViolations: ["VC-001"],
+      linkedViolations: ["COND"],
       linkedPolicies: ["POL-004"],
       estimatedInvestigationDays: 14,
       createdBy: "IA Command",
@@ -742,11 +742,11 @@ function App() {
 
   function nextViolationCode(violations) {
     const numbers = violations
-      .map((item) => String(item.id).match(/^VC-(\d+)$/)?.[1])
+      .map((item) => String(item.id).match(/^VIOL-(\d+)$/)?.[1])
       .filter(Boolean)
       .map(Number);
     const next = numbers.length ? Math.max(...numbers) + 1 : 1;
-    return `VC-${String(next).padStart(3, "0")}`;
+    return `VIOL-${String(next).padStart(3, "0")}`;
   }
 
   function createViolation(event) {
@@ -3241,7 +3241,7 @@ function PolicyForm({ policy, onSubmit, onCancel, violations }) {
           <input
             name="linkedViolationIds"
             defaultValue={policy?.linkedViolationIds?.join(", ") || ""}
-            placeholder="e.g., VC-001, VC-005"
+            placeholder="e.g., COND, EXFO, VIOL-001"
           />
           <small style={{ color: "#60716c", display: "block", marginTop: 4 }}>Enter violation codes separated by commas</small>
         </div>
@@ -3439,7 +3439,7 @@ function TemplateForm({ template, onSubmit, onCancel }) {
             <input
               name="linkedViolations"
               defaultValue={template?.linkedViolations?.join(", ") || ""}
-              placeholder="VC-001, VC-005"
+              placeholder="COND, EXFO, VIOL-001"
             />
           </div>
           <div style={{ flex: 1 }}>
