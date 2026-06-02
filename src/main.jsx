@@ -403,7 +403,6 @@ function App() {
     const complainantId = (form.get("complainantId")?.toString().trim() || "");
 
     const contactPhone = form.get("contactPhone")?.toString().trim() || "";
-    const contactEmail = form.get("contactEmail")?.toString().trim() || "";
 
     const narrative = form.get("narrative")?.toString().trim();
     const requiredOk = Boolean(incidentDateTime && narrative && category);
@@ -434,7 +433,6 @@ function App() {
           },
           contact: {
             phone: anonymous ? "" : contactPhone,
-            email: anonymous ? "" : contactEmail,
             address: "",
           },
           incident: {
@@ -1686,7 +1684,6 @@ function ComplaintsView({ data, activeCase, visibleComplaints, createComplaint, 
 
               <div className="row">
                 <input name="contactPhone" placeholder="Contact phone (hidden for anonymous)" />
-                <input name="contactEmail" placeholder="Contact email (hidden for anonymous)" />
               </div>
             </div>
 
