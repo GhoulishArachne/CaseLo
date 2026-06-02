@@ -581,15 +581,6 @@ export const customOptionsService = {
     }
   },
 
-  updateByCategory: async (category, updates) => {
-    const { data, error } = await supabase
-      .from("custom_options")
-      .update(updates)
-      .eq("category", category)
-      .select()
-      .single();
-    return { data, error };
-  },
 
   delete: async (id) => {
     const { error } = await supabase

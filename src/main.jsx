@@ -732,12 +732,28 @@ function App() {
         const brandingOpt = loadedData.customOptions?.find(
           (opt) => opt.category === "branding"
         );
-        if (brandingOpt?.options) {
-          const brandingArray = Array.isArray(brandingOpt.options)
-            ? brandingOpt.options
-            : JSON.parse(brandingOpt.options);
+
+        console.log("Branding option from Supabase:", brandingOpt);
+
+        if (brandingOpt) {
+          let brandingArray = brandingOpt.options;
+
+          // Handle different storage formats
+          if (typeof brandingArray === "string") {
+            try {
+              brandingArray = JSON.parse(brandingArray);
+            } catch (e) {
+              console.error("Failed to parse branding string:", e);
+              brandingArray = null;
+            }
+          }
+
+          console.log("Parsed branding array:", brandingArray);
+
           if (Array.isArray(brandingArray) && brandingArray.length > themeIndex) {
             const savedTheme = brandingArray[themeIndex];
+            console.log("Applying saved theme:", savedTheme);
+
             // Apply CSS variables from saved branding
             if (savedTheme.dark)
               document.documentElement.style.setProperty("--theme-dark", savedTheme.dark);
@@ -3963,12 +3979,15 @@ function BrandingSettingsPanel({ themeIndex, themeColors, setThemeIndex }) {
       const updated = [...themeColors];
       updated[themeIndex] = pendingChanges;
 
+      console.log("Saving branding to Supabase:", updated);
+
+      // Save to Supabase
+      const result = await customOptionsService.updateByCategory("branding", updated);
+      console.log("Save result:", result);
+
       // Update the themeColors array
       themeColors.splice(0, themeColors.length, ...updated);
       localStorage.setItem("theme-index", themeIndex.toString());
-
-      // Save to Supabase
-      await customOptionsService.updateByCategory("branding", updated);
 
       // Apply CSS variables
       if (pendingChanges.dark)
@@ -3993,7 +4012,7 @@ function BrandingSettingsPanel({ themeIndex, themeColors, setThemeIndex }) {
       setTimeout(() => setSaveMessage(""), 3000);
     } catch (error) {
       console.error("Failed to save branding:", error);
-      setSaveMessage("✗ Failed to save branding");
+      setSaveMessage("✗ Failed to save branding: " + error.message);
     } finally {
       setSaving(false);
     }
