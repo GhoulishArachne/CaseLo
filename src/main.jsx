@@ -4023,39 +4023,54 @@ function CustomDropdownManager({ data, onUpdateDropdown, onAddOption, onRemoveOp
 
 function BrandingSettingsPanel({ themeIndex, themeColors, setThemeIndex }) {
   const currentTheme = themeColors[themeIndex] || {};
-  const [pendingChanges, setPendingChanges] = useState({
-    name: currentTheme.name || "Default",
-    dark: currentTheme.dark || "#14201e",
-    accent: currentTheme.accent || "#2f7f67",
+
+  // Global branding (same across all themes)
+  const [globalBranding, setGlobalBranding] = useState({
     departmentName: currentTheme.departmentName || "Police Department",
     departmentLogoUrl: currentTheme.departmentLogoUrl || "",
     reportHeaderText: currentTheme.reportHeaderText || "",
     signatureBlockText: currentTheme.signatureBlockText || "",
+  });
+
+  // Theme-specific branding (per theme)
+  const [pendingChanges, setPendingChanges] = useState({
+    name: currentTheme.name || "Default",
+    dark: currentTheme.dark || "#14201e",
+    accent: currentTheme.accent || "#2f7f67",
     accentSecondaryColor: currentTheme.accentSecondaryColor || "#1e5c4a",
   });
+
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
 
-  function handleBrandingChange(field, value) {
-    setPendingChanges((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  }
-
+  
   async function handleSave() {
     setSaving(true);
     setSaveMessage("");
 
     try {
+      // Save global branding (applies to all themes)
+      await customOptionsService.updateByCategory("global_branding", globalBranding);
+
+      // Update all theme objects with global branding
       const updated = [...themeColors];
-      updated[themeIndex] = pendingChanges;
+      updated.forEach((theme) => {
+        theme.departmentName = globalBranding.departmentName;
+        theme.departmentLogoUrl = globalBranding.departmentLogoUrl;
+        theme.reportHeaderText = globalBranding.reportHeaderText;
+        theme.signatureBlockText = globalBranding.signatureBlockText;
+      });
+
+      // Update current theme with theme-specific colors
+      updated[themeIndex] = {
+        ...updated[themeIndex],
+        ...pendingChanges,
+      };
 
       console.log("Saving branding to Supabase:", updated);
 
-      // Save to Supabase
-      const result = await customOptionsService.updateByCategory("branding", updated);
-      console.log("Save result:", result);
+      // Save theme colors to Supabase
+      await customOptionsService.updateByCategory("branding", updated);
 
       // Update the themeColors array
       themeColors.splice(0, themeColors.length, ...updated);
@@ -4066,17 +4081,17 @@ function BrandingSettingsPanel({ themeIndex, themeColors, setThemeIndex }) {
         document.documentElement.style.setProperty("--theme-dark", pendingChanges.dark);
       if (pendingChanges.accent)
         document.documentElement.style.setProperty("--theme-accent", pendingChanges.accent);
-      if (pendingChanges.departmentName)
-        document.documentElement.style.setProperty("--dept-name", pendingChanges.departmentName);
-      if (pendingChanges.departmentLogoUrl)
+      if (globalBranding.departmentName)
+        document.documentElement.style.setProperty("--dept-name", globalBranding.departmentName);
+      if (globalBranding.departmentLogoUrl)
         document.documentElement.style.setProperty(
           "--dept-logo-url",
-          pendingChanges.departmentLogoUrl ? `url('${pendingChanges.departmentLogoUrl}')` : "none"
+          globalBranding.departmentLogoUrl ? `url('${globalBranding.departmentLogoUrl}')` : "none"
         );
-      if (pendingChanges.reportHeaderText)
-        document.documentElement.style.setProperty("--report-header", pendingChanges.reportHeaderText);
-      if (pendingChanges.signatureBlockText)
-        document.documentElement.style.setProperty("--signature-block", pendingChanges.signatureBlockText);
+      if (globalBranding.reportHeaderText)
+        document.documentElement.style.setProperty("--report-header", globalBranding.reportHeaderText);
+      if (globalBranding.signatureBlockText)
+        document.documentElement.style.setProperty("--signature-block", globalBranding.signatureBlockText);
       if (pendingChanges.accentSecondaryColor)
         document.documentElement.style.setProperty("--secondary-accent", pendingChanges.accentSecondaryColor);
 
@@ -4088,6 +4103,20 @@ function BrandingSettingsPanel({ themeIndex, themeColors, setThemeIndex }) {
     } finally {
       setSaving(false);
     }
+  }
+
+  function handleGlobalChange(field, value) {
+    setGlobalBranding((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  }
+
+  function handleThemeChange(field, value) {
+    setPendingChanges((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
   }
 
   return (
@@ -4130,64 +4159,92 @@ function BrandingSettingsPanel({ themeIndex, themeColors, setThemeIndex }) {
       )}
 
       <div style={{ display: "grid", gap: 16 }}>
-        <div>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "#60716c", textTransform: "uppercase" }}>
-            Department Name
-          </label>
-          <input
-            type="text"
-            value={pendingChanges.departmentName}
-            onChange={(e) => handleBrandingChange("departmentName", e.target.value)}
-            placeholder="e.g., San Santos Police Department"
-          />
+        <div style={{ paddingBottom: 16, borderBottom: "2px solid #dce4e1" }}>
+          <h4 style={{ margin: "0 0 16px 0", color: "#17212b" }}>Global Branding (All Themes)</h4>
+
+          <div>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "#60716c", textTransform: "uppercase" }}>
+              Department Name
+            </label>
+            <input
+              type="text"
+              value={globalBranding.departmentName}
+              onChange={(e) => handleGlobalChange("departmentName", e.target.value)}
+              placeholder="e.g., San Santos Police Department"
+            />
+          </div>
+
+          <div style={{ marginTop: 12 }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "#60716c", textTransform: "uppercase" }}>
+              Department Logo URL
+            </label>
+            <input
+              type="text"
+              value={globalBranding.departmentLogoUrl}
+              onChange={(e) => handleGlobalChange("departmentLogoUrl", e.target.value)}
+              placeholder="https://example.com/logo.png"
+            />
+            {globalBranding.departmentLogoUrl && (
+              <div style={{ marginTop: 8, padding: 8, background: "#f6f9f7", borderRadius: 6 }}>
+                <small style={{ color: "#60716c" }}>Logo Preview:</small>
+                <img
+                  src={globalBranding.departmentLogoUrl}
+                  alt="Department Logo"
+                  style={{ maxHeight: 60, marginTop: 4, borderRadius: 4 }}
+                  onError={() => {}}
+                />
+              </div>
+            )}
+          </div>
+
+          <div style={{ marginTop: 12 }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "#60716c", textTransform: "uppercase" }}>
+              Report Header Text
+            </label>
+            <input
+              type="text"
+              value={globalBranding.reportHeaderText}
+              onChange={(e) => handleGlobalChange("reportHeaderText", e.target.value)}
+              placeholder="e.g., Internal Affairs Division"
+            />
+          </div>
+
+          <div style={{ marginTop: 12 }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "#60716c", textTransform: "uppercase" }}>
+              Signature Block Text
+            </label>
+            <input
+              type="text"
+              value={globalBranding.signatureBlockText}
+              onChange={(e) => handleGlobalChange("signatureBlockText", e.target.value)}
+              placeholder="e.g., Authorized by: "
+            />
+          </div>
         </div>
 
-        <div>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "#60716c", textTransform: "uppercase" }}>
-            Department Logo URL
-          </label>
-          <input
-            type="text"
-            value={pendingChanges.departmentLogoUrl}
-            onChange={(e) => handleBrandingChange("departmentLogoUrl", e.target.value)}
-            placeholder="https://example.com/logo.png"
-          />
-          {pendingChanges.departmentLogoUrl && (
-            <div style={{ marginTop: 8, padding: 8, background: "#f6f9f7", borderRadius: 6 }}>
-              <small style={{ color: "#60716c" }}>Logo Preview:</small>
-              <img
-                src={pendingChanges.departmentLogoUrl}
-                alt="Department Logo"
-                style={{ maxHeight: 60, marginTop: 4, borderRadius: 4 }}
-                onError={() => {}}
+        <div style={{ paddingTop: 16 }}>
+          <h4 style={{ margin: "0 0 16px 0", color: "#17212b" }}>Theme Colors (Current: {pendingChanges.name})</h4>
+
+          <div>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "#60716c", textTransform: "uppercase" }}>
+              Primary Accent Color
+            </label>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <input
+                type="color"
+                value={pendingChanges.accent}
+                onChange={(e) => handleThemeChange("accent", e.target.value)}
+                style={{ width: 60, height: 44, border: "1px solid #dce4e1", borderRadius: 6, cursor: "pointer" }}
+              />
+              <input
+                type="text"
+                value={pendingChanges.accent}
+                onChange={(e) => handleThemeChange("accent", e.target.value)}
+                placeholder="#2f7f67"
+                style={{ flex: 1 }}
               />
             </div>
-          )}
-        </div>
-
-        <div>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "#60716c", textTransform: "uppercase" }}>
-            Report Header Text
-          </label>
-          <input
-            type="text"
-            value={pendingChanges.reportHeaderText}
-            onChange={(e) => handleBrandingChange("reportHeaderText", e.target.value)}
-            placeholder="e.g., Internal Affairs Division"
-          />
-        </div>
-
-        <div>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "#60716c", textTransform: "uppercase" }}>
-            Signature Block Text
-          </label>
-          <input
-            type="text"
-            value={pendingChanges.signatureBlockText}
-            onChange={(e) => handleBrandingChange("signatureBlockText", e.target.value)}
-            placeholder="e.g., Authorized by: "
-          />
-        </div>
+          </div>
 
         <div>
           <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "#60716c", textTransform: "uppercase" }}>
@@ -4213,13 +4270,13 @@ function BrandingSettingsPanel({ themeIndex, themeColors, setThemeIndex }) {
         <div style={{ padding: 12, background: "#eef5f1", borderRadius: 6, borderLeft: "4px solid var(--theme-accent)" }}>
           <strong style={{ fontSize: 13 }}>Preview</strong>
           <div style={{ marginTop: 12, fontSize: 13, color: "#42524e" }}>
-            {pendingChanges.departmentLogoUrl && (
-              <img src={pendingChanges.departmentLogoUrl} alt="Logo" style={{ maxHeight: 40, marginBottom: 8 }} />
+            {globalBranding.departmentLogoUrl && (
+              <img src={globalBranding.departmentLogoUrl} alt="Logo" style={{ maxHeight: 40, marginBottom: 8 }} />
             )}
-            <div style={{ fontWeight: 700, marginBottom: 4 }}>{pendingChanges.departmentName}</div>
-            <div style={{ color: "#60716c", marginBottom: 4 }}>{pendingChanges.reportHeaderText}</div>
+            <div style={{ fontWeight: 700, marginBottom: 4 }}>{globalBranding.departmentName}</div>
+            <div style={{ color: "#60716c", marginBottom: 4 }}>{globalBranding.reportHeaderText}</div>
             <div style={{ borderTop: "1px solid #dce4e1", paddingTop: 8, marginTop: 8 }}>
-              {pendingChanges.signatureBlockText}_________________
+              {globalBranding.signatureBlockText}_________________
             </div>
           </div>
         </div>
