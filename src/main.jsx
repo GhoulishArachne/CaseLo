@@ -537,6 +537,7 @@ function createPerson(event) {
 
     save(next);
     event.currentTarget.reset();
+  }
 
   function addItem(event) {
     event.preventDefault();
@@ -1729,4 +1730,4 @@ function ComplaintsView({ data, activeCase, visibleComplaints, createComplaint, 
 }
 
 
-createRoot(document.getElementById("root")).render(<App />);}
+createRoot(document.getElementById("root")).render(<App />);
