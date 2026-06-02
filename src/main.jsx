@@ -4282,6 +4282,7 @@ function BrandingSettingsPanel({ themeIndex, themeColors, setThemeIndex }) {
             </div>
           </div>
         </div>
+        </div>
       </div>
     </div>
   );
