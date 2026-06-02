@@ -555,29 +555,26 @@ export const customOptionsService = {
 
   updateByCategory: async (category, options) => {
     // First try to update existing record
-    const { data: existing } = await supabase
+    const { data: existing, error: checkError } = await supabase
       .from("custom_options")
       .select("id")
-      .eq("category", category)
-      .single();
+      .eq("category", category);
 
-    if (existing) {
+    if (existing && existing.length > 0) {
       // Update existing
       const { data, error } = await supabase
         .from("custom_options")
         .update({ options })
         .eq("category", category)
-        .select()
-        .single();
-      return { data, error };
+        .select();
+      return { data: data?.[0], error };
     } else {
       // Create new if doesn't exist
       const { data, error } = await supabase
         .from("custom_options")
         .insert([{ category, options }])
-        .select()
-        .single();
-      return { data, error };
+        .select();
+      return { data: data?.[0], error };
     }
   },
 
