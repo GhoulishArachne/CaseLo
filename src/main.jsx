@@ -5257,7 +5257,6 @@ function ComplaintsView({ data, activeCase, visibleComplaints, createComplaint, 
               <input
                 name="category"
                 placeholder="Complaint category"
-                defaultValue={"Uncategorized"}
               />
             </div>
 
