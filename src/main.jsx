@@ -1504,7 +1504,6 @@ async function createPerson(event) {
       console.error("Failed to create person:", error);
       alert("Failed to add person. Please try again.");
     }
-    event.currentTarget.reset();
   }
 
   async function editPerson(personId, updates) {
