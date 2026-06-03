@@ -1642,6 +1642,25 @@ function App() {
     event.currentTarget.reset();
   }
 
+  async function deleteComplaint(complaintId) {
+    if (!window.confirm(`Delete complaint ${complaintId}? This action cannot be undone.`)) return;
+
+    // Delete from Supabase FIRST
+    try {
+      await complaintsService.delete(complaintId);
+    } catch (error) {
+      alert("Error deleting complaint: " + error.message);
+      return;
+    }
+
+    // Then update local state
+    const next = {
+      ...data,
+      complaints: data.complaints.filter((c) => c.id !== complaintId),
+    };
+    save(next);
+    setActiveComplaintId(null);
+  }
 
 async function createPerson(event) {
     event.preventDefault();
@@ -1799,7 +1818,20 @@ async function createPerson(event) {
     save(next);
   }
 
-  function updateOfficerRiskScore(officerId, riskScore, reason) {
+  async function updateOfficerRiskScore(officerId, riskScore, reason) {
+    // Save to Supabase FIRST
+    try {
+      await peopleService.update(officerId, {
+        risk_score_override: riskScore,
+        risk_score_override_date: new Date().toISOString().slice(0, 10),
+        risk_score_override_reason: reason,
+      });
+    } catch (error) {
+      alert("Error updating officer risk score: " + error.message);
+      return;
+    }
+
+    // Then update local state
     const next = {
       ...data,
       people: data.people.map((p) =>
@@ -1814,7 +1846,18 @@ async function createPerson(event) {
     save(next);
   }
 
-  function updateTrainingDeficiencies(officerId, notes) {
+  async function updateTrainingDeficiencies(officerId, notes) {
+    // Save to Supabase FIRST
+    try {
+      await peopleService.update(officerId, {
+        training_deficiencies: notes,
+      });
+    } catch (error) {
+      alert("Error updating training deficiencies: " + error.message);
+      return;
+    }
+
+    // Then update local state
     const next = {
       ...data,
       people: data.people.map((p) =>
@@ -1908,6 +1951,82 @@ async function createPerson(event) {
 
     save(next);
     event.currentTarget.reset();
+  }
+
+  async function deleteEvidence(evidenceId) {
+    if (!window.confirm("Delete this evidence? This action cannot be undone.")) return;
+
+    // Delete from Supabase FIRST
+    try {
+      await evidenceService.delete(evidenceId);
+    } catch (error) {
+      alert("Error deleting evidence: " + error.message);
+      return;
+    }
+
+    // Then update local state
+    const next = {
+      ...data,
+      evidence: data.evidence.filter((e) => e.id !== evidenceId),
+    };
+    save(next);
+  }
+
+  async function deleteEvent(eventId) {
+    if (!window.confirm("Delete this timeline event? This action cannot be undone.")) return;
+
+    // Delete from Supabase FIRST
+    try {
+      await eventsService.delete(eventId);
+    } catch (error) {
+      alert("Error deleting event: " + error.message);
+      return;
+    }
+
+    // Then update local state
+    const next = {
+      ...data,
+      events: data.events.filter((e) => e.id !== eventId),
+    };
+    save(next);
+  }
+
+  async function deleteNote(noteId) {
+    if (!window.confirm("Delete this note? This action cannot be undone.")) return;
+
+    // Delete from Supabase FIRST
+    try {
+      await notesService.delete(noteId);
+    } catch (error) {
+      alert("Error deleting note: " + error.message);
+      return;
+    }
+
+    // Then update local state
+    const next = {
+      ...data,
+      notes: data.notes.filter((n) => n.id !== noteId),
+    };
+    save(next);
+  }
+
+  async function deleteTask(taskId) {
+    if (!window.confirm("Delete this task? This action cannot be undone.")) return;
+
+    // Delete from Supabase FIRST
+    try {
+      await tasksService.delete(taskId);
+    } catch (error) {
+      alert("Error deleting task: " + error.message);
+      return;
+    }
+
+    // Then update local state
+    const next = {
+      ...data,
+      tasks: data.tasks.filter((t) => t.id !== taskId),
+    };
+    save(next);
   }
 
   const filteredCases = useMemo(() => {
@@ -2419,16 +2538,16 @@ async function createPerson(event) {
           </section>
         )}
 
-        {activeView === "Evidence" && <CollectionView title="Evidence" icon={Fingerprint} items={visibleRecords.evidence} render={EvidenceItem} />}
+        {activeView === "Evidence" && <CollectionView title="Evidence" icon={Fingerprint} items={visibleRecords.evidence} render={(item) => <EvidenceItemWithDelete item={item} onDelete={deleteEvidence} />} />}
         {activeView === "People" && <PeopleView data={data} visiblePeople={visibleRecords.people} createPerson={createPerson} editPerson={editPerson} earlyInterventionByEmployeeId={earlyInterventionByEmployeeId} />}
         {activeView === "Officer Profile" && <OfficerProfileView data={data} officerProfiles={officerProfiles} selectedOfficerId={selectedOfficerId} setSelectedOfficerId={setSelectedOfficerId} updateOfficerRiskScore={updateOfficerRiskScore} updateTrainingDeficiencies={updateTrainingDeficiencies} editPerson={editPerson} />}
         {activeView === "Records" && <RecordsView data={data} setData={setData} />}
-        {activeView === "Complaints" && <ComplaintsView data={data} activeCase={activeCase} visibleComplaints={visibleRecords.complaints} createComplaint={submitComplaint} setActiveComplaintId={setActiveComplaintId} />}
+        {activeView === "Complaints" && <ComplaintsView data={data} activeCase={activeCase} visibleComplaints={visibleRecords.complaints} createComplaint={submitComplaint} deleteComplaint={deleteComplaint} setActiveComplaintId={setActiveComplaintId} />}
         {activeView === "Adjudication" && <AdjudicationTab data={data} activeCase={activeCase} editFinding={editFinding} />}
 
-        {activeView === "Timeline" && <CollectionView title="Timeline" icon={CalendarDays} items={visibleRecords.events} render={EventItem} />}
-        {activeView === "Tasks" && <CollectionView title="Tasks" icon={ClipboardList} items={visibleRecords.tasks} render={TaskItem} />}
-        {activeView === "Notes" && <CollectionView title="Notes" icon={FileSearch} items={visibleRecords.notes} render={NoteItem} />}
+        {activeView === "Timeline" && <CollectionView title="Timeline" icon={CalendarDays} items={visibleRecords.events} render={(item) => <EventItemWithDelete item={item} onDelete={deleteEvent} />} />}
+        {activeView === "Tasks" && <CollectionView title="Tasks" icon={ClipboardList} items={visibleRecords.tasks} render={(item) => <TaskItemWithDelete item={item} onDelete={deleteTask} />} />}
+        {activeView === "Notes" && <CollectionView title="Notes" icon={FileSearch} items={visibleRecords.notes} render={(item) => <NoteItemWithDelete item={item} onDelete={deleteNote} />} />}
         {activeView === "Reports" && <Reports data={data} metrics={metrics} earlyInterventionByEmployeeId={earlyInterventionByEmployeeId} />}
         {activeView === "Settings" && (
           <SettingsView
@@ -3247,6 +3366,133 @@ function NoteItem(item) {
       <span>
         <Archive size={14} /> {item.tag} · {item.created}
       </span>
+    </div>
+  );
+}
+
+function EvidenceItemWithDelete({ item, onDelete }) {
+  return (
+    <div className="record" style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 12, alignItems: "start" }}>
+      <div>
+        <strong>{item.title}</strong>
+        <span>
+          <Fingerprint size={14} /> {item.id} · {item.type}
+        </span>
+        <small>{item.description}</small>
+        <span>
+          <Link2 size={14} /> {item.source} · {item.obtained}
+        </span>
+      </div>
+      <button
+        onClick={() => onDelete(item.id)}
+        style={{
+          padding: "6px 10px",
+          background: "#fee5e3",
+          color: "#b6492b",
+          border: "1px solid #fbbf9f",
+          borderRadius: 4,
+          cursor: "pointer",
+          fontSize: 11,
+          fontWeight: 600,
+        }}
+        title="Delete evidence"
+      >
+        <Trash2 size={14} />
+      </button>
+    </div>
+  );
+}
+
+function EventItemWithDelete({ item, onDelete }) {
+  return (
+    <div className="record" style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 12, alignItems: "start" }}>
+      <div>
+        <strong>{item.title}</strong>
+        <span>
+          <CalendarDays size={14} /> {item.date} {item.time}
+        </span>
+        <span>
+          <MapPin size={14} /> {item.location}
+        </span>
+      </div>
+      <button
+        onClick={() => onDelete(item.id)}
+        style={{
+          padding: "6px 10px",
+          background: "#fee5e3",
+          color: "#b6492b",
+          border: "1px solid #fbbf9f",
+          borderRadius: 4,
+          cursor: "pointer",
+          fontSize: 11,
+          fontWeight: 600,
+        }}
+        title="Delete event"
+      >
+        <Trash2 size={14} />
+      </button>
+    </div>
+  );
+}
+
+function TaskItemWithDelete({ item, onDelete }) {
+  return (
+    <div className="record" style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 12, alignItems: "start" }}>
+      <div>
+        <strong>{item.title}</strong>
+        <span>
+          <AlertCircle size={14} /> {item.priority} · {item.status}
+        </span>
+        <span>
+          <Clock size={14} /> Due {item.due}
+        </span>
+      </div>
+      <button
+        onClick={() => onDelete(item.id)}
+        style={{
+          padding: "6px 10px",
+          background: "#fee5e3",
+          color: "#b6492b",
+          border: "1px solid #fbbf9f",
+          borderRadius: 4,
+          cursor: "pointer",
+          fontSize: 11,
+          fontWeight: 600,
+        }}
+        title="Delete task"
+      >
+        <Trash2 size={14} />
+      </button>
+    </div>
+  );
+}
+
+function NoteItemWithDelete({ item, onDelete }) {
+  return (
+    <div className="record" style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 12, alignItems: "start" }}>
+      <div>
+        <strong>{item.title}</strong>
+        <small>{item.body}</small>
+        <span>
+          <Archive size={14} /> {item.tag} · {item.created}
+        </span>
+      </div>
+      <button
+        onClick={() => onDelete(item.id)}
+        style={{
+          padding: "6px 10px",
+          background: "#fee5e3",
+          color: "#b6492b",
+          border: "1px solid #fbbf9f",
+          borderRadius: 4,
+          cursor: "pointer",
+          fontSize: 11,
+          fontWeight: 600,
+        }}
+        title="Delete note"
+      >
+        <Trash2 size={14} />
+      </button>
     </div>
   );
 }
@@ -5361,7 +5607,7 @@ function SettingsView({ themeIndex, setThemeIndex, data, setData, createViolatio
   );
 }
 
-function ComplaintsView({ data, activeCase, visibleComplaints, createComplaint, setActiveComplaintId }) {
+function ComplaintsView({ data, activeCase, visibleComplaints, createComplaint, deleteComplaint, setActiveComplaintId }) {
   const [tab, setTab] = useState("Intake"); // Intake | Submission
 
   return (
@@ -5512,15 +5758,15 @@ function ComplaintsView({ data, activeCase, visibleComplaints, createComplaint, 
               const ia = Boolean(c.mandatoryIAReviewAlert);
               const dup = Boolean(c?.screening?.duplicateDetected);
               return (
-                <button
-                  key={c.id}
-                  className={`case-card ${activeCase?.id && false ? "selected" : ""}`}
-                  onClick={() => setActiveComplaintId(c.id)}
-                  style={ia ? { borderColor: "#d64545" } : undefined}
-                >
-                  <span className="case-id">{c.id}</span>
-                  <strong>{c.title}</strong>
-                  <small>{c.narrative || c.description}</small>
+                <div key={c.id} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 12, alignItems: "start" }}>
+                  <button
+                    className={`case-card ${activeCase?.id && false ? "selected" : ""}`}
+                    onClick={() => setActiveComplaintId(c.id)}
+                    style={ia ? { borderColor: "#d64545", margin: 0 } : { margin: 0 }}
+                  >
+                    <span className="case-id">{c.id}</span>
+                    <strong>{c.title}</strong>
+                    <small>{c.narrative || c.description}</small>
 
                   <span className="meta-row">
                     <span style={{ fontWeight: 800 }}>
@@ -5549,7 +5795,25 @@ function ComplaintsView({ data, activeCase, visibleComplaints, createComplaint, 
                       </span>
                     ) : null}
                   </span>
-                </button>
+                  </button>
+                  <button
+                    onClick={() => deleteComplaint(c.id)}
+                    style={{
+                      padding: "6px 10px",
+                      background: "#fee5e3",
+                      color: "#b6492b",
+                      border: "1px solid #fbbf9f",
+                      borderRadius: 4,
+                      cursor: "pointer",
+                      fontSize: 11,
+                      fontWeight: 600,
+                      height: "fit-content",
+                    }}
+                    title="Delete complaint"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               );
             })
           ) : (
