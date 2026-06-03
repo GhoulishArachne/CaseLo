@@ -1476,6 +1476,15 @@ function App() {
     const evidenceNames = parseCsv(form.get("evidenceNames")?.toString());
     const evidenceNotes = parseCsv(form.get("evidenceNotes")?.toString());
 
+    // Convert subject officer badge numbers to officer IDs
+    const subjectBadges = parseCsv(form.get("subjectOfficerBadges")?.toString());
+    const subjectOfficerIds = subjectBadges
+      .map(badge => {
+        const officer = data.people.find(p => p.badgeNumber === badge);
+        return officer?.id;
+      })
+      .filter(Boolean);
+
     const next = {
       ...data,
       complaints: [
@@ -1486,6 +1495,7 @@ function App() {
           date: form.get("date")?.toString() || (incidentDate ? incidentDate : new Date().toISOString().slice(0, 10)),
           source: form.get("source")?.toString() || incidentLocation,
           description: form.get("description")?.toString() || narrative,
+          subjectOfficerIds,
           involvedPersonIds: parseCsv(form.get("involvedPersonIds")?.toString()),
           linkedCaseIds: [],
 
@@ -1572,6 +1582,7 @@ function App() {
         supervisor_referral: created.supervisorReferral,
         screening: created.screening,
         notes: created.title,
+        subject_officer_ids: created.subjectOfficerIds,
       };
       await complaintsService.create(complaintData);
     } catch (error) {
@@ -3867,6 +3878,49 @@ function OfficerProfileView({ data, officerProfiles, selectedOfficerId, setSelec
               />
             </div>
 
+            {/* Complaints Against This Officer */}
+            {(() => {
+              const complaintsAgainstOfficer = (data.complaints || []).filter(complaint =>
+                complaint.subjectOfficerIds && complaint.subjectOfficerIds.includes(profile.officer.id)
+              );
+              return (
+                <div style={{ background: "#ffffff", border: "1px solid #dce4e1", borderRadius: 8, padding: 16, marginBottom: 16 }}>
+                  <h3 style={{ margin: "0 0 12px" }}>Complaints Against Officer</h3>
+                  {complaintsAgainstOfficer.length === 0 ? (
+                    <p style={{ color: "var(--theme-text)", fontSize: 13, margin: 0 }}>No complaints filed against this officer.</p>
+                  ) : (
+                    <div style={{ display: "grid", gap: 8 }}>
+                      {complaintsAgainstOfficer.map(complaint => (
+                        <div key={complaint.id} style={{
+                          padding: 10,
+                          border: "1px solid #e5e7eb",
+                          borderRadius: 6,
+                          background: "#f9fafb"
+                        }}>
+                          <strong style={{ display: "block", fontSize: 13 }}>
+                            {complaint.id} - {complaint.title}
+                          </strong>
+                          <small style={{ display: "block", color: "var(--theme-text)", marginTop: 4 }}>
+                            Type: {complaint.complaintType} · Status: {complaint.status}
+                          </small>
+                          {complaint.incident?.dateTime && (
+                            <small style={{ display: "block", color: "var(--theme-text)" }}>
+                              Date: {new Date(complaint.incident.dateTime).toLocaleDateString()}
+                            </small>
+                          )}
+                          {complaint.category && (
+                            <small style={{ display: "block", color: "var(--theme-text)" }}>
+                              Category: {complaint.category}
+                            </small>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
             {/* Early Intervention Alerts */}
             {profile.earlyInterventionFlags.length > 0 && (
               <div style={{ background: "#ffe7da", border: "1px solid #d97706", borderRadius: 8, padding: 16, marginBottom: 16 }}>
@@ -5329,13 +5383,29 @@ function ComplaintsView({ data, activeCase, visibleComplaints, createComplaint, 
               <textarea name="supervisorReferralReason" placeholder="Reason for escalation (optional)" />
             </div>
 
+            {/* Subject Officer(s) - who the complaint is against */}
+            <div style={{ marginTop: 10 }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
+                Subject Officer(s) - Badge Numbers (comma-separated)
+              </label>
+              <input
+                name="subjectOfficerBadges"
+                placeholder="Badge numbers of officer(s) complaint is against (e.g., 201,203)"
+                defaultValue={""}
+              />
+            </div>
+
             {/* Involved personnel IDs (optional) */}
-            <input
-              name="involvedPersonIds"
-              placeholder="Involved person ids (comma-separated, optional)"
-              defaultValue={""}
-              style={{ marginTop: 10 }}
-            />
+            <div style={{ marginTop: 10 }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
+                Other Involved Personnel (comma-separated)
+              </label>
+              <input
+                name="involvedPersonIds"
+                placeholder="Other involved person ids (witnesses, etc.)"
+                defaultValue={""}
+              />
+            </div>
 
             <div style={{ marginTop: 10, display: "grid", gap: 10 }}>
               <button className="primary" type="submit">

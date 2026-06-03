@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS complaints (
   supervisor_referral JSONB DEFAULT '{}'::jsonb,
   screening JSONB DEFAULT '{}'::jsonb,
   evidence UUID[] DEFAULT '{}',
+  subject_officer_ids UUID[] DEFAULT '{}',
   status VARCHAR(50) DEFAULT 'Intake',
   mandatory_ia_review_alert JSONB DEFAULT '{}'::jsonb,
   notes TEXT,
