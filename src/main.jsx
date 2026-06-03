@@ -1182,13 +1182,29 @@ function App() {
     return `POL-${String(next).padStart(3, "0")}`;
   }
 
-  function createPolicy(event) {
+  async function createPolicy(event) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const title = form.get("title").toString().trim();
     if (!title) return;
 
     const id = nextPolicyCode(data.policies);
+    const policyData = {
+      policy_name: title,
+      description: form.get("description").toString().trim(),
+      category: form.get("category") || "Other",
+      version: form.get("version").toString().trim() || "1.0",
+    };
+
+    // Save to Supabase FIRST
+    try {
+      await policiesService.create(policyData);
+    } catch (error) {
+      alert("Error saving policy: " + error.message);
+      return;
+    }
+
+    // Then update local state
     const next = {
       ...data,
       policies: [
@@ -1216,7 +1232,16 @@ function App() {
     event.currentTarget.reset();
   }
 
-  function editPolicy(policyId, updates) {
+  async function editPolicy(policyId, updates) {
+    // Save to Supabase FIRST
+    try {
+      await policiesService.update(policyId, updates);
+    } catch (error) {
+      alert("Error updating policy: " + error.message);
+      return;
+    }
+
+    // Then update local state
     const next = {
       ...data,
       policies: data.policies.map((p) =>
@@ -1226,8 +1251,18 @@ function App() {
     save(next);
   }
 
-  function deletePolicy(policyId) {
+  async function deletePolicy(policyId) {
     if (!window.confirm(`Delete policy ${policyId}? This action cannot be undone.`)) return;
+
+    // Delete from Supabase FIRST
+    try {
+      await policiesService.delete(policyId);
+    } catch (error) {
+      alert("Error deleting policy: " + error.message);
+      return;
+    }
+
+    // Then update local state
     const next = {
       ...data,
       policies: data.policies.filter((p) => p.id !== policyId),
@@ -1244,7 +1279,7 @@ function App() {
     return `TMPL-${String(next).padStart(3, "0")}`;
   }
 
-  function createTemplate(event) {
+  async function createTemplate(event) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const name = form.get("name").toString().trim();
@@ -1264,6 +1299,21 @@ function App() {
       .map((x) => x.trim())
       .filter(Boolean);
 
+    const templateData = {
+      template_name: name,
+      description: form.get("description").toString().trim(),
+      category: form.get("category") || "General",
+    };
+
+    // Save to Supabase FIRST
+    try {
+      await templatesService.create(templateData);
+    } catch (error) {
+      alert("Error saving template: " + error.message);
+      return;
+    }
+
+    // Then update local state
     const next = {
       ...data,
       investigationTemplates: [
@@ -1298,7 +1348,16 @@ function App() {
     event.currentTarget.reset();
   }
 
-  function editTemplate(templateId, updates) {
+  async function editTemplate(templateId, updates) {
+    // Save to Supabase FIRST
+    try {
+      await templatesService.update(templateId, updates);
+    } catch (error) {
+      alert("Error updating template: " + error.message);
+      return;
+    }
+
+    // Then update local state
     const next = {
       ...data,
       investigationTemplates: data.investigationTemplates.map((t) =>
@@ -1308,8 +1367,18 @@ function App() {
     save(next);
   }
 
-  function deleteTemplate(templateId) {
+  async function deleteTemplate(templateId) {
     if (!window.confirm(`Delete template ${templateId}? This action cannot be undone.`)) return;
+
+    // Delete from Supabase FIRST
+    try {
+      await templatesService.delete(templateId);
+    } catch (error) {
+      alert("Error deleting template: " + error.message);
+      return;
+    }
+
+    // Then update local state
     const next = {
       ...data,
       investigationTemplates: data.investigationTemplates.filter((t) => t.id !== templateId),
@@ -1317,7 +1386,17 @@ function App() {
     save(next);
   }
 
-  function updateCustomDropdown(dropdownKey, newOptions) {
+  async function updateCustomDropdown(dropdownKey, newOptions) {
+    // Save to Supabase FIRST
+    try {
+      const optionsSet = new Set(newOptions);
+      await customOptionsService.updateByCategory(dropdownKey, optionsSet);
+    } catch (error) {
+      console.error("Error updating custom options:", error);
+      // Continue with local update even if Supabase fails for better UX
+    }
+
+    // Then update local state
     const next = {
       ...data,
       customOptions: {
