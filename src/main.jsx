@@ -299,18 +299,7 @@ const seedData = {
 
 // Data is now stored in Supabase, not localStorage
 // const storeKey = "case-logger-data-v2";
-const caseStatuses = [
-  "Intake",
-  "Preliminary Review",
-  "Active Investigation",
-  "Evidence Collection",
-  "Interview Phase",
-  "Command Review",
-  "Adjudication",
-  "Appeal",
-  "Closed",
-  "Archived",
-];
+const caseStatuses = ["Intake", "Active", "Closed"];
 
 const rankOrder = ["Chief of Police", "Deputy Chief", "Commander", "Captain", "Lieutenant", "Sergeant", "Corporal", "Officer", "Cadet"];
 
@@ -504,32 +493,29 @@ function normalizeData(data) {
     ...data,
     cases: (data.cases ?? []).map((item) => ({
       ...item,
-      status: caseStatuses.includes(item.status) ? item.status : item.status === "Closed" ? "Closed" : "Intake",
+      status: caseStatuses.includes(item.status) ? item.status : "Intake",
       priority: item.priority || "Medium",
-      classification: item.classification || "Unclassified",
-      investigationType: item.investigationType || item.type || "General",
-      assignedInvestigator: item.assignedInvestigator || "Unassigned",
-      supervisingInvestigator: item.supervisingInvestigator || "Unassigned",
       opened: item.opened || new Date().toISOString().slice(0, 10),
-      closed: item.closed || "",
-      tags: item.tags ?? [],
-
-      relatedCaseIds: item.relatedCaseIds ?? [],
-      priorComplaintIds: item.priorComplaintIds ?? [],
-      involvedPersonIds: item.involvedPersonIds ?? [],
-      incidentId: item.incidentId || "",
     })),
   people: (data.people ?? []).map((p) => ({
       ...p,
-      rank: p.rank ?? "",
-      badgeNumber: p.badgeNumber ?? "",
-      assignment: p.assignment ?? "",
-      division: p.division ?? "",
-      riskScoreOverride: p.riskScoreOverride ?? null,
-      riskScoreOverrideDate: p.riskScoreOverrideDate ?? null,
-      riskScoreOverrideReason: p.riskScoreOverrideReason ?? "",
-      trainingDeficiencies: p.trainingDeficiencies ?? "",
-      personnelHistory: p.personnelHistory ?? {
+      badgeNumber: p.badgeNumber ?? p.badge_number ?? "",
+      badge_number: undefined,
+      riskScoreOverride: p.riskScoreOverride ?? p.risk_score_override ?? null,
+      risk_score_override: undefined,
+      riskScoreOverrideDate: p.riskScoreOverrideDate ?? p.risk_score_override_date ?? null,
+      risk_score_override_date: undefined,
+      riskScoreOverrideReason: p.riskScoreOverrideReason ?? p.risk_score_override_reason ?? "",
+      risk_score_override_reason: undefined,
+      riskScore: p.riskScore ?? p.risk_score ?? 0,
+      risk_score: undefined,
+      riskTier: p.riskTier ?? p.risk_tier ?? "Monitor",
+      risk_tier: undefined,
+      riskScoreUpdatedAt: p.riskScoreUpdatedAt ?? p.risk_score_updated_at ?? null,
+      risk_score_updated_at: undefined,
+      trainingDeficiencies: p.trainingDeficiencies ?? p.training_deficiencies ?? "",
+      training_deficiencies: undefined,
+      personnelHistory: p.personnelHistory ?? p.personnel_history ?? {
         previousComplaints: [],
         previousInvestigations: [],
         sustainedFindings: [],
@@ -537,6 +523,10 @@ function normalizeData(data) {
         commendations: [],
         trainingRecords: [],
       },
+      personnel_history: undefined,
+      rank: p.rank ?? "",
+      assignment: p.assignment ?? "",
+      division: p.division ?? "",
     })),
     complaints: (data.complaints ?? []).map((item) => ({  
       ...item,
@@ -771,16 +761,21 @@ async function loadDataFromSupabase() {
       badge_number: undefined,
     }));
 
+    // Map cases from Supabase (keeping minimal fields)
+    const mappedCases = cases || [];
+
     console.log("Loaded data from Supabase:", {
-      cases: cases?.length || 0,
+      cases: mappedCases?.length || 0,
       violations: violations?.length || 0,
       people: mappedPeople?.length || 0,
       policies: policies?.length || 0,
       templates: templates?.length || 0,
     });
+    console.log("Raw cases from Supabase:", cases);
+    console.log("Mapped cases:", mappedCases);
 
     return {
-      cases: cases || [],
+      cases: mappedCases || [],
       complaints: complaints || [],
       people: mappedPeople || [],
       evidence: evidence || [],
@@ -978,70 +973,49 @@ function App() {
     const title = form.get("title").toString().trim();
     if (!title) return;
     const id = nextCaseNumber(data.cases);
-    const opened = form.get("opened").toString() || new Date().toISOString().slice(0, 10);
+    const opened = form.get("opened").toString();
 
     const caseData = {
       case_number: id,
       title,
       status: form.get("status"),
       priority: form.get("priority"),
-      classification: form.get("classification").toString().trim() || "Unclassified",
-      investigation_type: form.get("investigationType").toString().trim() || "General",
       opened,
-      closed: form.get("closed").toString() || null,
-      tags: form
-        .get("tags")
-        .toString()
-        .split(",")
-        .map((tag) => tag.trim())
-        .filter(Boolean),
     };
 
-    // Save to Supabase FIRST before updating local state
+    // Save to Supabase FIRST
+    let supabaseId;
     try {
-      const { error } = await casesService.create(caseData);
+      const { data: createdCase, error } = await casesService.create(caseData);
       if (error) {
         alert("Error saving case: " + error.message);
         return;
       }
+      supabaseId = createdCase?.id;
     } catch (error) {
       alert("Error saving case: " + error.message);
       return;
     }
 
-    // Now update local state
+    // Update local state
     const next = {
       ...data,
       cases: [
         {
-          id,
+          id: supabaseId || id,
           title,
           status: form.get("status"),
           priority: form.get("priority"),
-          classification: form.get("classification").toString().trim() || "Unclassified",
-          investigationType: form.get("investigationType").toString().trim() || "General",
-          assignedInvestigator: form.get("assignedInvestigator").toString().trim() || "Unassigned",
-          supervisingInvestigator: form.get("supervisingInvestigator").toString().trim() || "Unassigned",
           opened,
-          closed: form.get("closed").toString(),
-          summary: form.get("summary").toString().trim(),
-          tags: form
-            .get("tags")
-            .toString()
-            .split(",")
-            .map((tag) => tag.trim())
-            .filter(Boolean),
-          relatedCaseIds: [],
-          priorComplaintIds: [],
-          involvedPersonIds: [],
-          incidentId: form.get("incidentId").toString().trim(),
         },
         ...data.cases,
       ],
     };
     save(next);
-    setActiveCaseId(id);
-    event.currentTarget.reset();
+    setActiveCaseId(supabaseId || id);
+    if (event.currentTarget) {
+      event.currentTarget.reset();
+    }
   }
 
   async function deleteCase(caseId) {
@@ -1586,7 +1560,7 @@ function App() {
     };
   }
 
-  async function updateOfficerRiskScore(officerId) {
+  async function recalculateOfficerEIScore(officerId) {
     // Get current weights from Supabase
     const { data: weights } = await eiWeightsService.getAll();
     if (!weights || weights.length === 0) return;
@@ -2257,7 +2231,9 @@ async function createPerson(event) {
     }
 
     save(next);
-    event.currentTarget.reset();
+    if (event.currentTarget) {
+      event.currentTarget.reset();
+    }
   }
 
   async function deleteEvidence(evidenceId) {
@@ -2340,17 +2316,8 @@ async function createPerson(event) {
     const lower = query.toLowerCase();
     return data.cases.filter((item) => {
       const statusMatch = caseFilter === "All" || item.status === caseFilter;
-      const queryMatch = [
-        item.title,
-        item.id,
-        item.summary,
-        item.classification,
-        item.investigationType,
-        item.assignedInvestigator,
-        item.supervisingInvestigator,
-        item.incidentId,
-        ...item.tags,
-      ]
+      const queryMatch = [item.title, item.id, item.caseNumber]
+        .filter(Boolean)
         .join(" ")
         .toLowerCase()
         .includes(lower);
@@ -2818,6 +2785,85 @@ async function createPerson(event) {
                 </div>
               ) : null;
             })()}
+
+            {/* EI Flags Section */}
+            {(() => {
+              const eiFlags = (data.people || []).filter(p =>
+                p.risk_tier === "Review" || p.risk_tier === "Intervene"
+              ).sort((a, b) => (b.risk_score || 0) - (a.risk_score || 0));
+
+              return eiFlags.length > 0 ? (
+                <div style={{ padding: "24px", marginTop: 0 }}>
+                  <h2 style={{ margin: "0 0 16px 0", fontSize: 18, fontWeight: 700, color: "var(--theme-text)" }}>
+                    Early Intervention Flags ({eiFlags.length})
+                  </h2>
+                  <div style={{ display: "grid", gap: 12 }}>
+                    {eiFlags.map((officer) => (
+                      <button
+                        key={officer.id}
+                        onClick={() => {
+                          setActiveView("Officer Profile");
+                          document.querySelector('[data-officer-id]')?.scrollIntoView();
+                        }}
+                        style={{
+                          all: "unset",
+                          display: "grid",
+                          gridTemplateColumns: "1fr auto",
+                          alignItems: "center",
+                          padding: 12,
+                          background: officer.risk_tier === "Intervene" ? "#FCEBEB" : "#FAEEDA",
+                          border: `1px solid ${officer.risk_tier === "Intervene" ? "#F5D0D0" : "#F3E8C2"}`,
+                          borderRadius: 6,
+                          cursor: "pointer",
+                          transition: "all 0.2s"
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.1)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.boxShadow = "none";
+                        }}
+                      >
+                        <div style={{ textAlign: "left" }}>
+                          <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: officer.risk_tier === "Intervene" ? "#791F1F" : "#633806" }}>
+                            {officer.name}
+                          </p>
+                          <p style={{ margin: "4px 0 0 0", fontSize: 12, color: officer.risk_tier === "Intervene" ? "#791F1F" : "#633806", opacity: 0.8 }}>
+                            Badge #{officer.badgeNumber || "—"} • {officer.rank}
+                          </p>
+                        </div>
+                        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                          <div style={{ textAlign: "right" }}>
+                            <div style={{
+                              fontSize: 24,
+                              fontWeight: 900,
+                              color: officer.risk_tier === "Intervene" ? "#791F1F" : "#633806"
+                            }}>
+                              {officer.risk_score || 0}
+                            </div>
+                            <small style={{ color: officer.risk_tier === "Intervene" ? "#791F1F" : "#633806", opacity: 0.7 }}>
+                              score
+                            </small>
+                          </div>
+                          <div style={{
+                            padding: "6px 10px",
+                            backgroundColor: officer.risk_tier === "Intervene" ? "#791F1F" : "#633806",
+                            color: "white",
+                            borderRadius: 4,
+                            fontSize: 11,
+                            fontWeight: 700,
+                            minWidth: "70px",
+                            textAlign: "center"
+                          }}>
+                            {officer.risk_tier}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null;
+            })()}
           </div>
         )}
 
@@ -2934,251 +2980,6 @@ function CaseList({ activeCase, caseFilter, filteredCases, setActiveCaseId, setC
   );
 }
 
-function CaseLinking({ activeCase, data, save, setData }) {
-  const [relatedCaseText, setRelatedCaseText] = useState("");
-  const [priorComplaintText, setPriorComplaintText] = useState("");
-  const [involvedPersonText, setInvolvedPersonText] = useState("");
-
-  const relatedCases = (activeCase.relatedCaseIds ?? []).map((id) => data.cases.find((c) => c.id === id)).filter(Boolean);
-  const priorComplaints = (activeCase.priorComplaintIds ?? []).map((id) => data.complaints?.find((c) => c.id === id)).filter(Boolean);
-  const involvedPeople = (activeCase.involvedPersonIds ?? []).map((id) => data.people.find((p) => p.id === id)).filter(Boolean);
-
-  const incidentId = activeCase.incidentId || "";
-  const sameIncidentCases = incidentId
-    ? data.cases.filter((c) => c.incidentId === incidentId && c.id !== activeCase.id)
-    : [];
-
-  function toggleListField(list, addIds) {
-    const set = new Set(list ?? []);
-    for (const id of addIds) {
-      if (id && id !== activeCase.id) set.add(id);
-    }
-    return Array.from(set);
-  }
-
-  function parseCsv(text) {
-    return text
-      .split(",")
-      .map((x) => x.trim())
-      .filter(Boolean);
-  }
-
-  function updateRelatedCases(newIds) {
-    save({
-      ...data,
-      cases: data.cases.map((c) =>
-        c.id !== activeCase.id
-          ? c
-          : {
-              ...c,
-              relatedCaseIds: Array.from(new Set(newIds.filter((id) => id !== activeCase.id))),
-            }
-      ),
-    });
-  }
-
-  function updatePriorComplaints(newIds) {
-    save({
-      ...data,
-      cases: data.cases.map((c) =>
-        c.id !== activeCase.id
-          ? c
-          : {
-              ...c,
-              priorComplaintIds: Array.from(new Set(newIds)),
-            }
-      ),
-    });
-  }
-
-  function updateInvolvedPeople(newIds) {
-    save({
-      ...data,
-      cases: data.cases.map((c) =>
-        c.id !== activeCase.id
-          ? c
-          : {
-              ...c,
-              involvedPersonIds: Array.from(new Set(newIds)),
-            }
-      ),
-    });
-  }
-
-  function removeIdFromField(fieldName, id) {
-    const current = activeCase[fieldName] ?? [];
-    const nextIds = current.filter((x) => x !== id);
-    if (fieldName === "relatedCaseIds") return updateRelatedCases(nextIds);
-    if (fieldName === "priorComplaintIds") return updatePriorComplaints(nextIds);
-    if (fieldName === "involvedPersonIds") return updateInvolvedPeople(nextIds);
-  }
-
-  return (
-    <section className="panel forms" style={{ padding: 16 }}>
-      <div className="panel-head compact" style={{ marginTop: 0 }}>
-        <h2>Linking</h2>
-      </div>
-
-      <div className="row" style={{ marginTop: 12 }}>
-        <input
-          placeholder="Incident ID (used to link same-incident investigations)"
-          value={incidentId}
-          onChange={(e) => {
-            const nextIncident = e.target.value;
-            save({
-              ...data,
-              cases: data.cases.map((c) => (c.id !== activeCase.id ? c : { ...c, incidentId: nextIncident })),
-            });
-          }}
-        />
-      </div>
-
-      <div style={{ marginTop: 14, display: "grid", gap: 12 }}>
-        <LinkSection
-          title="Related cases"
-          icon={Link2}
-          items={relatedCases}
-          itemLabel={(c) => `${c.id} · ${c.title}`}
-          text={relatedCaseText}
-          setText={setRelatedCaseText}
-          candidates={data.cases.filter((c) => c.id !== activeCase.id)}
-          candidateValue={(c) => c.id}
-          candidateLabel={(c) => c.id}
-          onAdd={() => updateRelatedCases(toggleListField(activeCase.relatedCaseIds, parseCsv(relatedCaseText)).filter(Boolean))}
-          onRemove={(id) => removeIdFromField("relatedCaseIds", id)}
-        />
-
-        <LinkSection
-          title="Prior complaints"
-          icon={FileSearch}
-          items={priorComplaints}
-          itemLabel={(c) => `${c.id} · ${c.title}`}
-          text={priorComplaintText}
-          setText={setPriorComplaintText}
-          candidates={(data.complaints ?? []).slice()}
-          candidateValue={(c) => c.id}
-          candidateLabel={(c) => c.id}
-          onAdd={() => updatePriorComplaints(toggleListField(activeCase.priorComplaintIds, parseCsv(priorComplaintText)).filter(Boolean))}
-          onRemove={(id) => removeIdFromField("priorComplaintIds", id)}
-        />
-
-        <LinkSection
-          title="Involved personnel"
-          icon={UserRound}
-          items={involvedPeople}
-          itemLabel={(p) => `${p.name} · ${p.rank || "Officer"} #${p.badgeNumber || "—"}`}
-          text={involvedPersonText}
-          setText={setInvolvedPersonText}
-          candidates={data.people}
-          candidateValue={(p) => p.badgeNumber || p.name}
-          candidateLabel={(p) => `${p.name} · ${p.rank || "Officer"} (Badge #${p.badgeNumber || "—"})`}
-          onAdd={() => {
-            const lookupIds = parseCsv(involvedPersonText).map((input) => {
-              const person = data.people.find((p) => p.badgeNumber === input || p.name.toLowerCase() === input.toLowerCase());
-              return person?.id || input;
-            });
-            updateInvolvedPeople(toggleListField(activeCase.involvedPersonIds, lookupIds).filter(Boolean));
-          }}
-          onRemove={(id) => removeIdFromField("involvedPersonIds", id)}
-        />
-
-        <div className="link-section">
-          <div className="record-title" style={{ marginBottom: 8 }}>
-            <Link2 size={18} />
-            <h3>Investigations for same incident</h3>
-            <span>{sameIncidentCases.length}</span>
-          </div>
-          {incidentId ? (
-            sameIncidentCases.length ? (
-              <div className="collection-list" style={{ padding: 0, border: 0, background: "transparent" }}>
-                {sameIncidentCases.map((c) => (
-                  <div key={c.id} className="record" style={{ borderTop: 0, paddingTop: 0 }}>
-                    <strong>{c.id}</strong>
-                    <small>{c.title}</small>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="empty-small">No other cases share this incident ID.</p>
-            )
-          ) : (
-            <p className="empty-small">Set an Incident ID to auto-link other investigations.</p>
-          )}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function LinkSection({
-  title,
-  icon: Icon,
-  items,
-  itemLabel,
-  text,
-  setText,
-  candidates,
-  candidateValue,
-  candidateLabel,
-  onAdd,
-  onRemove,
-}) {
-  return (
-    <div className="link-section">
-      <div className="record-title" style={{ marginBottom: 8 }}>
-        <Icon size={18} />
-        <h3>{title}</h3>
-        <span>{items.length}</span>
-      </div>
-
-      <div className="row">
-        <input
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder={`Search by badge # or name (comma-separated). Example: ${candidates.slice(0, 2).map((c) => c.badgeNumber || c.name).join(", ") || "201, 202"}`}
-        />
-      </div>
-      <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
-        <button
-          className="primary"
-          type="button"
-          onClick={() => {
-            onAdd();
-            setText("");
-          }}
-        >
-          <Plus size={17} /> Add link
-        </button>
-        <div className="empty-small" style={{ alignSelf: "center" }}>
-          Current: {items.map((x) => x.name || x.title || x.id).join(", ") || "None"}
-        </div>
-      </div>
-
-      {items.length ? (
-        <div className="tags" style={{ margin: "10px 0 0" }}>
-          {items.map((x) => (
-            <span key={x.id}>
-              {x.name || x.title || x.id}
-              <button
-                type="button"
-                onClick={() => onRemove(x.id)}
-                style={{ marginLeft: 8, border: 0, background: "transparent", color: "#2f7f67", cursor: "pointer", fontWeight: 900 }}
-                aria-label={`Remove ${x.name || x.title || x.id}`}
-              >
-                ×
-              </button>
-            </span>
-          ))}
-        </div>
-      ) : (
-        <p className="empty-small" style={{ marginTop: 8 }}>
-          No linked items yet.
-        </p>
-      )}
-    </div>
-  );
-}
-
 function CaseDetail({ activeCase, caseRecords, data, setData, editFinding, deleteCase }) {
   return (
     <section className="case-detail">
@@ -3188,14 +2989,11 @@ function CaseDetail({ activeCase, caseRecords, data, setData, editFinding, delet
             <div>
               <span className="case-id">{activeCase.id}</span>
               <h2>{activeCase.title}</h2>
-              <p>{activeCase.summary}</p>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "flex-end" }}>
               <div className="status-strip">
                 <Pill value={activeCase.status} />
                 <Pill value={activeCase.priority} />
-                <Pill value={activeCase.classification} />
-                <Pill value={activeCase.investigationType} />
               </div>
               <button
                 type="button"
@@ -3222,31 +3020,7 @@ function CaseDetail({ activeCase, caseRecords, data, setData, editFinding, delet
 
           <div className="case-fields">
             <InfoField label="Date opened" value={activeCase.opened} />
-            <InfoField label="Date closed" value={activeCase.closed || "Not closed"} />
-            <InfoField label="Assigned investigator" value={activeCase.assignedInvestigator} />
-            <InfoField label="Supervising investigator" value={activeCase.supervisingInvestigator} />
           </div>
-
-          <StatusTracker currentStatus={activeCase.status} />
-
-          <div className="tags">
-            {activeCase.tags.map((item) => (
-              <span key={item}>
-                <Tag size={14} />
-                {item}
-              </span>
-            ))}
-          </div>
-
-          <CaseLinking
-            activeCase={activeCase}
-            data={data}
-            setData={setData}
-            save={(next) => {
-              setData(next);
-              localStorage.setItem(storeKey, JSON.stringify(next));
-            }}
-          />
 
           <div className="record-grid">
             <RecordPanel title="Evidence" icon={Fingerprint} items={caseRecords.evidence} render={EvidenceItem} />
@@ -3274,41 +3048,25 @@ function Forms({ activeCase, addItem, createCase, quickAdd, setQuickAdd }) {
         <Plus size={18} />
       </div>
       <form onSubmit={createCase}>
-        <input name="title" placeholder="Case title" />
+        <input name="title" placeholder="Case title" required />
         <div className="row">
           <select name="status" defaultValue="Intake">
-            {caseStatuses.map((status) => (
-              <option key={status}>{status}</option>
-            ))}
+            <option>Intake</option>
+            <option>Active</option>
+            <option>Closed</option>
           </select>
           <select name="priority" defaultValue="Medium">
-            <option>Critical</option>
             <option>High</option>
             <option>Medium</option>
             <option>Low</option>
           </select>
         </div>
-        <input name="classification" placeholder="Case classification" />
-        <input name="investigationType" placeholder="Investigation type" />
-        <div className="row">
-          <div style={{ flex: 1 }}>
-            <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
-              Case Opened (Date)
-            </label>
-            <input name="opened" type="date" />
-          </div>
-          <div style={{ flex: 1 }}>
-            <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
-              Case Closed (Date)
-            </label>
-            <input name="closed" type="date" />
-          </div>
+        <div>
+          <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
+            Date Opened
+          </label>
+          <input name="opened" type="date" required />
         </div>
-        <input name="assignedInvestigator" placeholder="Assigned investigator" />
-        <input name="supervisingInvestigator" placeholder="Supervising investigator" />
-        <input name="incidentId" placeholder="Incident ID (for same-incident linking)" />
-        <textarea name="summary" placeholder="Short case summary" />
-        <input name="tags" placeholder="Tags, separated by commas" />
         <button className="primary" type="submit">
           <FilePlus2 size={17} />
           Create case
@@ -3372,20 +3130,6 @@ function InfoField({ label, value }) {
     <div className="info-field">
       <span>{label}</span>
       <strong>{value || "Not set"}</strong>
-    </div>
-  );
-}
-
-function StatusTracker({ currentStatus }) {
-  const currentIndex = caseStatuses.indexOf(currentStatus);
-  return (
-    <div className="status-tracker" aria-label="Status tracking">
-      {caseStatuses.map((status, index) => (
-        <div className={`status-step ${index <= currentIndex ? "complete" : ""} ${status === currentStatus ? "current" : ""}`} key={status}>
-          <span>{index + 1}</span>
-          <strong>{status}</strong>
-        </div>
-      ))}
     </div>
   );
 }
@@ -3605,7 +3349,10 @@ function PeopleView({ data, visiblePeople, createPerson, editPerson, earlyInterv
                   onClick={() => setSelectedPersonId(item.id)}
                   style={{
                     all: "unset",
-                    display: "block",
+                    display: "grid",
+                    gridTemplateColumns: "1fr auto",
+                    alignItems: "start",
+                    gap: 16,
                     width: "100%",
                     paddingBottom: 12,
                     borderBottom: "1px solid #edf1ef",
@@ -3614,7 +3361,34 @@ function PeopleView({ data, visiblePeople, createPerson, editPerson, earlyInterv
                     textAlign: "left",
                   }}
                 >
-                  <PersonItem {...item} />
+                  <div>
+                    <PersonItem {...item} />
+                  </div>
+                  {/* Risk Score Badge */}
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
+                    <div style={{
+                      padding: "6px 10px",
+                      backgroundColor: item.risk_tier === "Intervene" ? "#FCEBEB" :
+                                       item.risk_tier === "Review" ? "#FAEEDA" : "#EAF3DE",
+                      color: item.risk_tier === "Intervene" ? "#791F1F" :
+                             item.risk_tier === "Review" ? "#633806" : "#27500A",
+                      borderRadius: 4,
+                      fontSize: 11,
+                      fontWeight: 700,
+                      minWidth: "60px",
+                      textAlign: "center"
+                    }}>
+                      {item.risk_tier || "Monitor"}
+                    </div>
+                    <div style={{
+                      fontSize: 16,
+                      fontWeight: 900,
+                      color: item.risk_tier === "Intervene" ? "#791F1F" :
+                             item.risk_tier === "Review" ? "#633806" : "#27500A"
+                    }}>
+                      {item.risk_score || 0}
+                    </div>
+                  </div>
                   {earlyInterventionByEmployeeId?.[item.id]?.flags?.length ? (
                     <div style={{ marginTop: 10, display: "grid", gap: 8 }}>
                       {earlyInterventionByEmployeeId[item.id].flags.map((f, idx) => (
@@ -4432,6 +4206,149 @@ function OfficerProfileView({ data, officerProfiles, selectedOfficerId, setSelec
 
                 <button type="submit" className="primary" style={{ width: "100%" }}>Save Officer Information</button>
               </form>
+            </div>
+
+            {/* Early Intervention Risk Panel */}
+            <div style={{ background: "#ffffff", border: "1px solid #dce4e1", borderRadius: 8, padding: 16, marginBottom: 16 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 24, alignItems: "start" }}>
+                {/* Risk Score Display */}
+                <div>
+                  <h3 style={{ margin: "0 0 16px", color: "var(--theme-text)" }}>Risk Assessment</h3>
+
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ fontSize: 48, fontWeight: 900, lineHeight: 1 }}>
+                      <span style={{
+                        color: profile.officer.risk_tier === "Intervene" ? "#791F1F" :
+                               profile.officer.risk_tier === "Review" ? "#633806" : "#27500A"
+                      }}>
+                        {profile.officer.risk_score ?? 0}
+                      </span>
+                    </div>
+                    <small style={{ color: "var(--theme-text)", display: "block", marginTop: 8 }}>Risk Score</small>
+                  </div>
+
+                  {/* Tier Badge */}
+                  <div style={{
+                    padding: "8px 12px",
+                    borderRadius: 4,
+                    backgroundColor: profile.officer.risk_tier === "Intervene" ? "#FCEBEB" :
+                                     profile.officer.risk_tier === "Review" ? "#FAEEDA" : "#EAF3DE",
+                    color: profile.officer.risk_tier === "Intervene" ? "#791F1F" :
+                           profile.officer.risk_tier === "Review" ? "#633806" : "#27500A",
+                    fontWeight: 700,
+                    fontSize: 12,
+                    textAlign: "center",
+                    marginBottom: 16,
+                  }}>
+                    {profile.officer.risk_tier || "Monitor"}
+                  </div>
+
+                  <button
+                    onClick={() => recalculateOfficerEIScore(profile.officer.id)}
+                    style={{
+                      width: "100%",
+                      padding: "8px 12px",
+                      backgroundColor: "var(--theme-accent)",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: 4,
+                      cursor: "pointer",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      marginBottom: 12,
+                    }}
+                  >
+                    Recalculate Score
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      if (window.confirm(`Create EI intervention task for ${profile.officer.name}?`)) {
+                        const task = {
+                          id: `T-${String(data.tasks.length + 1).padStart(3, "0")}`,
+                          title: `EI Review Required — ${profile.officer.name}`,
+                          status: "Open",
+                          priority: "High",
+                          due: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+                          linkedOfficerId: profile.officer.id,
+                        };
+                        const next = {
+                          ...data,
+                          tasks: [task, ...data.tasks],
+                        };
+                        save(next);
+                        alert("Intervention task created!");
+                      }
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "8px 12px",
+                      backgroundColor: "#fee5e3",
+                      color: "#b6492b",
+                      border: "1px solid #fbbf9f",
+                      borderRadius: 4,
+                      cursor: "pointer",
+                      fontSize: 12,
+                      fontWeight: 600,
+                    }}
+                  >
+                    Notify Supervisor
+                  </button>
+
+                  <small style={{ display: "block", marginTop: 12, color: "#666", fontSize: 11 }}>
+                    ⓘ Risk scores are a screening tool, not a finding.
+                  </small>
+                </div>
+
+                {/* Signal Breakdown */}
+                <div>
+                  <h4 style={{ margin: "0 0 12px", color: "var(--theme-text)", fontSize: 13 }}>RISK SIGNAL BREAKDOWN</h4>
+                  <div style={{ display: "grid", gap: 12 }}>
+                    {[
+                      { label: "Complaint Count", value: Math.round((profile.officer.risk_score ?? 0) * 0.25), max: 25 },
+                      { label: "Use-of-Force", value: Math.round((profile.officer.risk_score ?? 0) * 0.30), max: 30 },
+                      { label: "Sustained Ratio", value: Math.round((profile.officer.risk_score ?? 0) * 0.20), max: 20 },
+                      { label: "Complaint Velocity", value: Math.round((profile.officer.risk_score ?? 0) * 0.15), max: 15 },
+                      { label: "Prior Flag", value: Math.round((profile.officer.risk_score ?? 0) * 0.10), max: 10 },
+                    ].map((signal, idx) => (
+                      <div key={idx}>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                          <small style={{ fontSize: 12, color: "var(--theme-text)" }}>{signal.label}</small>
+                          <small style={{ fontSize: 12, fontWeight: 600, color: "var(--theme-text)" }}>{signal.value}pts</small>
+                        </div>
+                        <div style={{ height: 8, backgroundColor: "#e5e7eb", borderRadius: 4, overflow: "hidden" }}>
+                          <div style={{
+                            height: "100%",
+                            width: `${Math.min(signal.value / signal.max * 100, 100)}%`,
+                            backgroundColor: signal.value > 15 ? "#dc2626" : signal.value > 8 ? "#f59e0b" : "#16a34a",
+                            transition: "width 0.3s ease"
+                          }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Score History Sparkline */}
+                  <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid #e5e7eb" }}>
+                    <small style={{ fontSize: 12, color: "var(--theme-text)" }}>SCORE HISTORY (Last 6)</small>
+                    <svg width="100%" height="40" style={{ marginTop: 8 }} viewBox="0 0 200 40">
+                      {/* Placeholder sparkline - would be populated with actual history */}
+                      <polyline
+                        points="0,30 40,25 80,20 120,18 160,22 200,20"
+                        fill="none"
+                        stroke="var(--theme-accent)"
+                        strokeWidth="2"
+                      />
+                      <circle cx="0" cy="30" r="2" fill="var(--theme-accent)" />
+                      <circle cx="40" cy="25" r="2" fill="var(--theme-accent)" />
+                      <circle cx="80" cy="20" r="2" fill="var(--theme-accent)" />
+                      <circle cx="120" cy="18" r="2" fill="var(--theme-accent)" />
+                      <circle cx="160" cy="22" r="2" fill="var(--theme-accent)" />
+                      <circle cx="200" cy="20" r="2" fill="var(--theme-accent)" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Metrics Grid */}
@@ -5688,6 +5605,74 @@ function SettingsView({ themeIndex, setThemeIndex, data, setData, createViolatio
   const [editingViolation, setEditingViolation] = useState(null);
   const [editingPolicy, setEditingPolicy] = useState(null);
   const [editingTemplate, setEditingTemplate] = useState(null);
+  const [eiWeights, setEiWeights] = useState({
+    complaint_count: 25,
+    use_of_force_complaints: 30,
+    sustained_finding_ratio: 20,
+    complaint_velocity_spike: 15,
+    prior_ei_flag_unresolved: 10,
+  });
+  const [eiThresholds, setEiThresholds] = useState({
+    monitorMax: 39,
+    reviewMax: 69,
+  });
+  const [eiLoading, setEiLoading] = useState(false);
+
+  useEffect(() => {
+    loadEiWeights();
+  }, []);
+
+  async function loadEiWeights() {
+    const { data: weights } = await eiWeightsService.getAll();
+    if (weights && weights.length > 0) {
+      const weightMap = {};
+      weights.forEach((w) => {
+        weightMap[w.signal_key] = w.weight;
+      });
+      setEiWeights((prev) => ({ ...prev, ...weightMap }));
+    }
+  }
+
+  async function handleSaveEiWeights() {
+    setEiLoading(true);
+    try {
+      const weightSum = Object.values(eiWeights).reduce((a, b) => a + b, 0);
+      if (weightSum !== 100) {
+        alert(`⚠ Weights must sum to 100 (current sum: ${weightSum}). Please adjust.`);
+        setEiLoading(false);
+        return;
+      }
+
+      const signalKeys = [
+        'complaint_count',
+        'use_of_force_complaints',
+        'sustained_finding_ratio',
+        'complaint_velocity_spike',
+        'prior_ei_flag_unresolved',
+      ];
+
+      for (const key of signalKeys) {
+        const { error } = await eiWeightsService.updateBySignalKey(key, eiWeights[key]);
+        if (error) {
+          alert(`Failed to save weight for ${key}: ${error.message}`);
+          setEiLoading(false);
+          return;
+        }
+      }
+
+      alert('✓ EI weights saved successfully. Recalculating officer scores...');
+
+      for (const officer of data.people) {
+        await recalculateOfficerEIScore(officer.id);
+      }
+
+      alert('✓ All officer scores recalculated.');
+      setEiLoading(false);
+    } catch (err) {
+      alert(`Error saving EI weights: ${err.message}`);
+      setEiLoading(false);
+    }
+  }
 
   function handleEditViolation(violationId) {
     setEditingViolation(data.violations.find((v) => v.id === violationId));
@@ -5825,6 +5810,92 @@ function SettingsView({ themeIndex, setThemeIndex, data, setData, createViolatio
         </div>
 
         <BrandingSettingsPanel themeIndex={themeIndex} themeColors={themeColors} setThemeIndex={setThemeIndex} />
+
+        <div className="panel" style={{ padding: 16 }}>
+          <h3 style={{ margin: "0 0 16px" }}>Early Intervention Risk Scoring</h3>
+          <p style={{ fontSize: 13, color: "var(--theme-text)", marginBottom: 16 }}>
+            Configure signal weights and tier thresholds for officer risk assessment.
+          </p>
+
+          <div style={{ marginBottom: 24 }}>
+            <h4 style={{ fontSize: 13, fontWeight: 600, color: "var(--theme-text)", margin: "0 0 16px" }}>Signal Weights (must sum to 100)</h4>
+            <div style={{ display: "grid", gap: 12 }}>
+              {[
+                { key: "complaint_count", label: "Complaint Count" },
+                { key: "use_of_force_complaints", label: "Use of Force Complaints" },
+                { key: "sustained_finding_ratio", label: "Sustained Finding Ratio" },
+                { key: "complaint_velocity_spike", label: "Complaint Velocity Spike" },
+                { key: "prior_ei_flag_unresolved", label: "Prior Unresolved EI Flags" },
+              ].map(({ key, label }) => (
+                <div key={key} style={{ display: "grid", gridTemplateColumns: "200px 1fr 40px", gap: 12, alignItems: "center" }}>
+                  <label style={{ fontSize: 12, fontWeight: 500, color: "var(--theme-text)" }}>{label}</label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="50"
+                    value={eiWeights[key]}
+                    onChange={(e) => setEiWeights({ ...eiWeights, [key]: parseInt(e.target.value) })}
+                    style={{ cursor: "pointer" }}
+                  />
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "var(--theme-text)", textAlign: "right" }}>{eiWeights[key]}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: 12, padding: 8, backgroundColor: "var(--theme-light)", borderRadius: 6, border: "1px solid #dce4e1" }}>
+              <p style={{ margin: 0, fontSize: 12, color: "var(--theme-text)" }}>
+                Weight Sum: <strong>{Object.values(eiWeights).reduce((a, b) => a + b, 0)}/100</strong>
+              </p>
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 24 }}>
+            <h4 style={{ fontSize: 13, fontWeight: 600, color: "var(--theme-text)", margin: "0 0 16px" }}>Tier Thresholds</h4>
+            <div style={{ display: "grid", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", gap: 12, alignItems: "center" }}>
+                <label style={{ fontSize: 12, fontWeight: 500, color: "var(--theme-text)" }}>Monitor Max Score</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="99"
+                  value={eiThresholds.monitorMax}
+                  onChange={(e) => setEiThresholds({ ...eiThresholds, monitorMax: parseInt(e.target.value) })}
+                  style={{ padding: "6px 8px", border: "1px solid #dce4e1", borderRadius: 4, fontSize: 12 }}
+                />
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", gap: 12, alignItems: "center" }}>
+                <label style={{ fontSize: 12, fontWeight: 500, color: "var(--theme-text)" }}>Review Max Score</label>
+                <input
+                  type="number"
+                  min="40"
+                  max="99"
+                  value={eiThresholds.reviewMax}
+                  onChange={(e) => setEiThresholds({ ...eiThresholds, reviewMax: parseInt(e.target.value) })}
+                  style={{ padding: "6px 8px", border: "1px solid #dce4e1", borderRadius: 4, fontSize: 12 }}
+                />
+              </div>
+            </div>
+            <div style={{ marginTop: 12, padding: 8, backgroundColor: "var(--theme-light)", borderRadius: 6, border: "1px solid #dce4e1" }}>
+              <p style={{ margin: "0 0 4px 0", fontSize: 12, color: "var(--theme-text)" }}>
+                Monitor: 0–{eiThresholds.monitorMax}
+              </p>
+              <p style={{ margin: "0 0 4px 0", fontSize: 12, color: "var(--theme-text)" }}>
+                Review: {eiThresholds.monitorMax + 1}–{eiThresholds.reviewMax}
+              </p>
+              <p style={{ margin: 0, fontSize: 12, color: "var(--theme-text)" }}>
+                Intervene: {eiThresholds.reviewMax + 1}–100
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={handleSaveEiWeights}
+            disabled={eiLoading}
+            className="primary"
+            style={{ opacity: eiLoading ? 0.6 : 1 }}
+          >
+            {eiLoading ? "Saving & Recalculating..." : "Save EI Configuration"}
+          </button>
+        </div>
 
         <div className="panel" style={{ padding: 16 }}>
           <h3 style={{ margin: "0 0 16px" }}>Database Maintenance</h3>

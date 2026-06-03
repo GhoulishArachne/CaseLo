@@ -9,18 +9,10 @@
 CREATE TABLE IF NOT EXISTS cases (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   case_number VARCHAR(20) UNIQUE NOT NULL,
+  title VARCHAR(255) NOT NULL,
   status VARCHAR(50) NOT NULL DEFAULT 'Intake',
   priority VARCHAR(20) DEFAULT 'Medium',
-  classification VARCHAR(50) DEFAULT 'Unclassified',
-  investigation_type VARCHAR(50) DEFAULT 'General',
   opened DATE NOT NULL DEFAULT CURRENT_DATE,
-  closed DATE,
-  tags TEXT[] DEFAULT '{}',
-  related_case_ids UUID[] DEFAULT '{}',
-  prior_complaint_ids UUID[] DEFAULT '{}',
-  involved_person_ids UUID[] DEFAULT '{}',
-  description TEXT,
-  notes TEXT,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );

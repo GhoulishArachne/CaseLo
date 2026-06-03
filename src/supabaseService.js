@@ -40,14 +40,16 @@ export const authService = {
 // ============================================
 export const casesService = {
   getAll: async () => {
-    const { data, error } = await supabase.from("cases").select("*");
+    const { data, error } = await supabase
+      .from("cases")
+      .select("id,case_number,title,status,priority,opened,created_at,updated_at");
     return { data, error };
   },
 
   getOne: async (id) => {
     const { data, error } = await supabase
       .from("cases")
-      .select("*")
+      .select("id,case_number,title,status,priority,opened,created_at,updated_at")
       .eq("id", id)
       .single();
     return { data, error };
@@ -57,19 +59,16 @@ export const casesService = {
     const { data, error } = await supabase
       .from("cases")
       .insert([caseData])
-      .select()
-      .single();
-    return { data, error };
+      .select("id,case_number,title,status,priority,opened,created_at,updated_at");
+    return { data: data?.[0] || null, error };
   },
 
   update: async (id, updates) => {
     const { data, error } = await supabase
       .from("cases")
       .update(updates)
-      .eq("id", id)
-      .select()
-      .single();
-    return { data, error };
+      .eq("id", id);
+    return { data: data?.[0] || null, error };
   },
 
   delete: async (id) => {
@@ -83,14 +82,16 @@ export const casesService = {
 // ============================================
 export const complaintsService = {
   getAll: async () => {
-    const { data, error } = await supabase.from("complaints").select("*");
+    const { data, error } = await supabase
+      .from("complaints")
+      .select("id,complaint_number,type,complainant,contact,incident,supervisor_referral,screening,evidence,subject_officer_ids,status,mandatory_ia_review_alert,notes,created_at,updated_at");
     return { data, error };
   },
 
   getOne: async (id) => {
     const { data, error } = await supabase
       .from("complaints")
-      .select("*")
+      .select("id,complaint_number,type,complainant,contact,incident,supervisor_referral,screening,evidence,subject_officer_ids,status,mandatory_ia_review_alert,notes,created_at,updated_at")
       .eq("id", id)
       .single();
     return { data, error };
@@ -100,9 +101,8 @@ export const complaintsService = {
     const { data, error } = await supabase
       .from("complaints")
       .insert([complaintData])
-      .select()
-      .single();
-    return { data, error };
+      .select("id,complaint_number,type,complainant,contact,incident,supervisor_referral,screening,evidence,subject_officer_ids,status,mandatory_ia_review_alert,notes,created_at,updated_at");
+    return { data: data?.[0] || null, error };
   },
 
   update: async (id, updates) => {
@@ -110,9 +110,8 @@ export const complaintsService = {
       .from("complaints")
       .update(updates)
       .eq("id", id)
-      .select()
-      .single();
-    return { data, error };
+      .select("id,complaint_number,type,complainant,contact,incident,supervisor_referral,screening,evidence,subject_officer_ids,status,mandatory_ia_review_alert,notes,created_at,updated_at");
+    return { data: data?.[0] || null, error };
   },
 
   delete: async (id) => {
@@ -129,14 +128,16 @@ export const complaintsService = {
 // ============================================
 export const peopleService = {
   getAll: async () => {
-    const { data, error } = await supabase.from("people").select("*");
+    const { data, error } = await supabase
+      .from("people")
+      .select("id,name,badge_number,rank,department,personnel_history,risk_score_override,risk_score_override_date,risk_score_override_reason,training_deficiencies,risk_score,risk_tier,risk_score_updated_at,created_at,updated_at");
     return { data, error };
   },
 
   getOne: async (id) => {
     const { data, error } = await supabase
       .from("people")
-      .select("*")
+      .select("id,name,badge_number,rank,department,personnel_history,risk_score_override,risk_score_override_date,risk_score_override_reason,training_deficiencies,risk_score,risk_tier,risk_score_updated_at,created_at,updated_at")
       .eq("id", id)
       .single();
     return { data, error };
@@ -146,9 +147,8 @@ export const peopleService = {
     const { data, error } = await supabase
       .from("people")
       .insert([personData])
-      .select()
-      .single();
-    return { data, error };
+      .select("id,name,badge_number,rank,department,personnel_history,risk_score_override,risk_score_override_date,risk_score_override_reason,training_deficiencies,risk_score,risk_tier,risk_score_updated_at,created_at,updated_at");
+    return { data: data?.[0] || null, error };
   },
 
   update: async (id, updates) => {
@@ -156,9 +156,8 @@ export const peopleService = {
       .from("people")
       .update(updates)
       .eq("id", id)
-      .select()
-      .single();
-    return { data, error };
+      .select("id,name,badge_number,rank,department,personnel_history,risk_score_override,risk_score_override_date,risk_score_override_reason,training_deficiencies,risk_score,risk_tier,risk_score_updated_at,created_at,updated_at");
+    return { data: data?.[0] || null, error };
   },
 
   delete: async (id) => {
@@ -172,14 +171,16 @@ export const peopleService = {
 // ============================================
 export const evidenceService = {
   getAll: async () => {
-    const { data, error } = await supabase.from("evidence").select("*");
+    const { data, error } = await supabase
+      .from("evidence")
+      .select("id,case_id,evidence_id,evidence_type,description,location,discovery_date,confidence,chain_of_custody,notes,created_at");
     return { data, error };
   },
 
   getByCaseId: async (caseId) => {
     const { data, error } = await supabase
       .from("evidence")
-      .select("*")
+      .select("id,case_id,evidence_id,evidence_type,description,location,discovery_date,confidence,chain_of_custody,notes,created_at")
       .eq("case_id", caseId);
     return { data, error };
   },
@@ -188,9 +189,8 @@ export const evidenceService = {
     const { data, error } = await supabase
       .from("evidence")
       .insert([evidenceData])
-      .select()
-      .single();
-    return { data, error };
+      .select("id,case_id,evidence_id,evidence_type,description,location,discovery_date,confidence,chain_of_custody,notes,created_at");
+    return { data: data?.[0] || null, error };
   },
 
   update: async (id, updates) => {
@@ -214,14 +214,16 @@ export const evidenceService = {
 // ============================================
 export const eventsService = {
   getAll: async () => {
-    const { data, error } = await supabase.from("events").select("*");
+    const { data, error } = await supabase
+      .from("events")
+      .select("id,case_id,event_id,type,event_date,event_time,location,description,witnesses,created_at");
     return { data, error };
   },
 
   getByCaseId: async (caseId) => {
     const { data, error } = await supabase
       .from("events")
-      .select("*")
+      .select("id,case_id,event_id,type,event_date,event_time,location,description,witnesses,created_at")
       .eq("case_id", caseId);
     return { data, error };
   },
@@ -230,9 +232,8 @@ export const eventsService = {
     const { data, error } = await supabase
       .from("events")
       .insert([eventData])
-      .select()
-      .single();
-    return { data, error };
+      .select("id,case_id,event_id,type,event_date,event_time,location,description,witnesses,created_at");
+    return { data: data?.[0] || null, error };
   },
 
   update: async (id, updates) => {
@@ -240,9 +241,8 @@ export const eventsService = {
       .from("events")
       .update(updates)
       .eq("id", id)
-      .select()
-      .single();
-    return { data, error };
+      .select("id,case_id,event_id,type,event_date,event_time,location,description,witnesses,created_at");
+    return { data: data?.[0] || null, error };
   },
 
   delete: async (id) => {
@@ -256,14 +256,16 @@ export const eventsService = {
 // ============================================
 export const notesService = {
   getAll: async () => {
-    const { data, error } = await supabase.from("notes").select("*");
+    const { data, error } = await supabase
+      .from("notes")
+      .select("id,case_id,note_id,tag,note_date,author,content,created_at");
     return { data, error };
   },
 
   getByCaseId: async (caseId) => {
     const { data, error } = await supabase
       .from("notes")
-      .select("*")
+      .select("id,case_id,note_id,tag,note_date,author,content,created_at")
       .eq("case_id", caseId);
     return { data, error };
   },
@@ -272,9 +274,8 @@ export const notesService = {
     const { data, error } = await supabase
       .from("notes")
       .insert([noteData])
-      .select()
-      .single();
-    return { data, error };
+      .select("id,case_id,note_id,tag,note_date,author,content,created_at");
+    return { data: data?.[0] || null, error };
   },
 
   update: async (id, updates) => {
@@ -282,9 +283,8 @@ export const notesService = {
       .from("notes")
       .update(updates)
       .eq("id", id)
-      .select()
-      .single();
-    return { data, error };
+      .select("id,case_id,note_id,tag,note_date,author,content,created_at");
+    return { data: data?.[0] || null, error };
   },
 
   delete: async (id) => {
@@ -298,14 +298,16 @@ export const notesService = {
 // ============================================
 export const tasksService = {
   getAll: async () => {
-    const { data, error } = await supabase.from("tasks").select("*");
+    const { data, error } = await supabase
+      .from("tasks")
+      .select("id,case_id,task_id,title,priority,status,due_date,assigned_to,description,created_at");
     return { data, error };
   },
 
   getByCaseId: async (caseId) => {
     const { data, error } = await supabase
       .from("tasks")
-      .select("*")
+      .select("id,case_id,task_id,title,priority,status,due_date,assigned_to,description,created_at")
       .eq("case_id", caseId);
     return { data, error };
   },
@@ -314,9 +316,8 @@ export const tasksService = {
     const { data, error } = await supabase
       .from("tasks")
       .insert([taskData])
-      .select()
-      .single();
-    return { data, error };
+      .select("id,case_id,task_id,title,priority,status,due_date,assigned_to,description,created_at");
+    return { data: data?.[0] || null, error };
   },
 
   update: async (id, updates) => {
@@ -324,9 +325,8 @@ export const tasksService = {
       .from("tasks")
       .update(updates)
       .eq("id", id)
-      .select()
-      .single();
-    return { data, error };
+      .select("id,case_id,task_id,title,priority,status,due_date,assigned_to,description,created_at");
+    return { data: data?.[0] || null, error };
   },
 
   delete: async (id) => {
@@ -340,14 +340,16 @@ export const tasksService = {
 // ============================================
 export const findingsService = {
   getAll: async () => {
-    const { data, error } = await supabase.from("findings").select("*");
+    const { data, error } = await supabase
+      .from("findings")
+      .select("id,case_id,finding_id,finding_type,officer_involved,severity_level,appeal_status,command_review_status,discipline_template,notes,created_at");
     return { data, error };
   },
 
   getByCaseId: async (caseId) => {
     const { data, error } = await supabase
       .from("findings")
-      .select("*")
+      .select("id,case_id,finding_id,finding_type,officer_involved,severity_level,appeal_status,command_review_status,discipline_template,notes,created_at")
       .eq("case_id", caseId);
     return { data, error };
   },
@@ -356,9 +358,8 @@ export const findingsService = {
     const { data, error } = await supabase
       .from("findings")
       .insert([findingData])
-      .select()
-      .single();
-    return { data, error };
+      .select("id,case_id,finding_id,finding_type,officer_involved,severity_level,appeal_status,command_review_status,discipline_template,notes,created_at");
+    return { data: data?.[0] || null, error };
   },
 
   update: async (id, updates) => {
@@ -366,9 +367,8 @@ export const findingsService = {
       .from("findings")
       .update(updates)
       .eq("id", id)
-      .select()
-      .single();
-    return { data, error };
+      .select("id,case_id,finding_id,finding_type,officer_involved,severity_level,appeal_status,command_review_status,discipline_template,notes,created_at");
+    return { data: data?.[0] || null, error };
   },
 
   delete: async (id) => {
@@ -382,14 +382,14 @@ export const findingsService = {
 // ============================================
 export const violationsService = {
   getAll: async () => {
-    const { data, error } = await supabase.from("violations").select("*");
+    const { data, error } = await supabase.from("violations").select("id,violation_code,title,description,category,severity,discipline_recommendations,created_at");
     return { data, error };
   },
 
   getOne: async (id) => {
     const { data, error } = await supabase
       .from("violations")
-      .select("*")
+      .select("id,violation_code,title,description,category,severity,discipline_recommendations,created_at")
       .eq("id", id)
       .single();
     return { data, error };
@@ -399,9 +399,8 @@ export const violationsService = {
     const { data, error } = await supabase
       .from("violations")
       .insert([violationData])
-      .select()
-      .single();
-    return { data, error };
+      .select("id,violation_code,title,description,category,severity,discipline_recommendations,created_at");
+    return { data: data?.[0] || null, error };
   },
 
   update: async (id, updates) => {
@@ -409,9 +408,8 @@ export const violationsService = {
       .from("violations")
       .update(updates)
       .eq("id", id)
-      .select()
-      .single();
-    return { data, error };
+      .select("id,violation_code,title,description,category,severity,discipline_recommendations,created_at");
+    return { data: data?.[0] || null, error };
   },
 
   delete: async (id) => {
@@ -428,14 +426,14 @@ export const violationsService = {
 // ============================================
 export const policiesService = {
   getAll: async () => {
-    const { data, error } = await supabase.from("policies").select("*");
+    const { data, error } = await supabase.from("policies").select("id,policy_code,title,description,url,category,version,effective_date,linked_violation_ids,notes,created_at");
     return { data, error };
   },
 
   getOne: async (id) => {
     const { data, error } = await supabase
       .from("policies")
-      .select("*")
+      .select("id,policy_code,title,description,url,category,version,effective_date,linked_violation_ids,notes,created_at")
       .eq("id", id)
       .single();
     return { data, error };
@@ -445,9 +443,8 @@ export const policiesService = {
     const { data, error } = await supabase
       .from("policies")
       .insert([policyData])
-      .select()
-      .single();
-    return { data, error };
+      .select("id,policy_code,title,description,url,category,version,effective_date,linked_violation_ids,notes,created_at");
+    return { data: data?.[0] || null, error };
   },
 
   update: async (id, updates) => {
@@ -455,9 +452,8 @@ export const policiesService = {
       .from("policies")
       .update(updates)
       .eq("id", id)
-      .select()
-      .single();
-    return { data, error };
+      .select("id,policy_code,title,description,url,category,version,effective_date,linked_violation_ids,notes,created_at");
+    return { data: data?.[0] || null, error };
   },
 
   delete: async (id) => {
@@ -473,14 +469,14 @@ export const templatesService = {
   getAll: async () => {
     const { data, error } = await supabase
       .from("investigation_templates")
-      .select("*");
+      .select("id,template_code,name,description,category,investigation_scope,key_questions,required_evidence_types,linked_violations,linked_policies,estimated_days,created_at");
     return { data, error };
   },
 
   getOne: async (id) => {
     const { data, error } = await supabase
       .from("investigation_templates")
-      .select("*")
+      .select("id,template_code,name,description,category,investigation_scope,key_questions,required_evidence_types,linked_violations,linked_policies,estimated_days,created_at")
       .eq("id", id)
       .single();
     return { data, error };
@@ -490,9 +486,8 @@ export const templatesService = {
     const { data, error } = await supabase
       .from("investigation_templates")
       .insert([templateData])
-      .select()
-      .single();
-    return { data, error };
+      .select("id,template_code,name,description,category,investigation_scope,key_questions,required_evidence_types,linked_violations,linked_policies,estimated_days,created_at");
+    return { data: data?.[0] || null, error };
   },
 
   update: async (id, updates) => {
@@ -500,9 +495,8 @@ export const templatesService = {
       .from("investigation_templates")
       .update(updates)
       .eq("id", id)
-      .select()
-      .single();
-    return { data, error };
+      .select("id,template_code,name,description,category,investigation_scope,key_questions,required_evidence_types,linked_violations,linked_policies,estimated_days,created_at");
+    return { data: data?.[0] || null, error };
   },
 
   delete: async (id) => {
@@ -521,14 +515,14 @@ export const customOptionsService = {
   getAll: async () => {
     const { data, error } = await supabase
       .from("custom_options")
-      .select("*");
+      .select("id,category,options,created_at,updated_at");
     return { data, error };
   },
 
   getByCategory: async (category) => {
     const { data, error } = await supabase
       .from("custom_options")
-      .select("*")
+      .select("id,category,options,created_at,updated_at")
       .eq("category", category)
       .single();
     return { data, error };
@@ -538,9 +532,8 @@ export const customOptionsService = {
     const { data, error } = await supabase
       .from("custom_options")
       .insert([optionData])
-      .select()
-      .single();
-    return { data, error };
+      .select("id,category,options,created_at,updated_at");
+    return { data: data?.[0] || null, error };
   },
 
   update: async (id, updates) => {
@@ -548,9 +541,8 @@ export const customOptionsService = {
       .from("custom_options")
       .update(updates)
       .eq("id", id)
-      .select()
-      .single();
-    return { data, error };
+      .select("id,category,options,created_at,updated_at");
+    return { data: data?.[0] || null, error };
   },
 
   updateByCategory: async (category, options) => {
@@ -595,14 +587,14 @@ export const documentFoldersService = {
   getAll: async () => {
     const { data, error } = await supabase
       .from("document_folders")
-      .select("*");
+      .select("id,name,parent_folder_id,document_type,person_id,created_at,updated_at");
     return { data, error };
   },
 
   getOne: async (id) => {
     const { data, error } = await supabase
       .from("document_folders")
-      .select("*")
+      .select("id,name,parent_folder_id,document_type,person_id,created_at,updated_at")
       .eq("id", id)
       .single();
     return { data, error };
@@ -611,7 +603,7 @@ export const documentFoldersService = {
   getByParent: async (parentFolderId) => {
     const { data, error } = await supabase
       .from("document_folders")
-      .select("*")
+      .select("id,name,parent_folder_id,document_type,person_id,created_at,updated_at")
       .eq("parent_folder_id", parentFolderId);
     return { data, error };
   },
@@ -619,7 +611,7 @@ export const documentFoldersService = {
   getByType: async (docType) => {
     const { data, error } = await supabase
       .from("document_folders")
-      .select("*")
+      .select("id,name,parent_folder_id,document_type,person_id,created_at,updated_at")
       .eq("document_type", docType);
     return { data, error };
   },
@@ -627,7 +619,7 @@ export const documentFoldersService = {
   getByPerson: async (personId) => {
     const { data, error } = await supabase
       .from("document_folders")
-      .select("*")
+      .select("id,name,parent_folder_id,document_type,person_id,created_at,updated_at")
       .eq("person_id", personId);
     return { data, error };
   },
@@ -636,9 +628,8 @@ export const documentFoldersService = {
     const { data, error } = await supabase
       .from("document_folders")
       .insert([folderData])
-      .select()
-      .single();
-    return { data, error };
+      .select("id,name,parent_folder_id,document_type,person_id,created_at,updated_at");
+    return { data: data?.[0] || null, error };
   },
 
   update: async (id, updates) => {
@@ -646,9 +637,8 @@ export const documentFoldersService = {
       .from("document_folders")
       .update(updates)
       .eq("id", id)
-      .select()
-      .single();
-    return { data, error };
+      .select("id,name,parent_folder_id,document_type,person_id,created_at,updated_at");
+    return { data: data?.[0] || null, error };
   },
 
   delete: async (id) => {
@@ -667,14 +657,14 @@ export const documentsService = {
   getAll: async () => {
     const { data, error } = await supabase
       .from("documents")
-      .select("*");
+      .select("id,title,filename,document_type,folder_id,person_id,case_id,storage_path,description,file_size,mime_type,created_at,updated_at");
     return { data, error };
   },
 
   getOne: async (id) => {
     const { data, error } = await supabase
       .from("documents")
-      .select("*")
+      .select("id,title,filename,document_type,folder_id,person_id,case_id,storage_path,description,file_size,mime_type,created_at,updated_at")
       .eq("id", id)
       .single();
     return { data, error };
@@ -683,7 +673,7 @@ export const documentsService = {
   getByFolder: async (folderId) => {
     const { data, error } = await supabase
       .from("documents")
-      .select("*")
+      .select("id,title,filename,document_type,folder_id,person_id,case_id,storage_path,description,file_size,mime_type,created_at,updated_at")
       .eq("folder_id", folderId)
       .order("created_at", { ascending: false });
     return { data, error };
@@ -692,7 +682,7 @@ export const documentsService = {
   getByPerson: async (personId) => {
     const { data, error } = await supabase
       .from("documents")
-      .select("*")
+      .select("id,title,filename,document_type,folder_id,person_id,case_id,storage_path,description,file_size,mime_type,created_at,updated_at")
       .eq("person_id", personId);
     return { data, error };
   },
@@ -700,7 +690,7 @@ export const documentsService = {
   getByCase: async (caseId) => {
     const { data, error } = await supabase
       .from("documents")
-      .select("*")
+      .select("id,title,filename,document_type,folder_id,person_id,case_id,storage_path,description,file_size,mime_type,created_at,updated_at")
       .eq("case_id", caseId);
     return { data, error };
   },
@@ -709,9 +699,8 @@ export const documentsService = {
     const { data, error } = await supabase
       .from("documents")
       .insert([docData])
-      .select()
-      .single();
-    return { data, error };
+      .select("id,title,filename,document_type,folder_id,person_id,case_id,storage_path,description,file_size,mime_type,created_at,updated_at");
+    return { data: data?.[0] || null, error };
   },
 
   update: async (id, updates) => {
@@ -719,9 +708,8 @@ export const documentsService = {
       .from("documents")
       .update(updates)
       .eq("id", id)
-      .select()
-      .single();
-    return { data, error };
+      .select("id,title,filename,document_type,folder_id,person_id,case_id,storage_path,description,file_size,mime_type,created_at,updated_at");
+    return { data: data?.[0] || null, error };
   },
 
   delete: async (id) => {
