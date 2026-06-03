@@ -1041,8 +1041,22 @@ function App() {
     event.currentTarget.reset();
   }
 
-  function deleteCase(caseId) {
+  async function deleteCase(caseId) {
     if (!window.confirm(`Delete case ${caseId}? This action cannot be undone.`)) return;
+
+    // Delete from Supabase FIRST (cascade delete will remove related records)
+    try {
+      const { error } = await casesService.delete(caseId);
+      if (error) {
+        alert("Error deleting case: " + error.message);
+        return;
+      }
+    } catch (error) {
+      alert("Error deleting case: " + error.message);
+      return;
+    }
+
+    // Then update local state
     const next = {
       ...data,
       cases: data.cases.filter((c) => c.id !== caseId),
@@ -1716,43 +1730,66 @@ async function createPerson(event) {
     }
   }
 
-  function createFinding(event) {
+  async function createFinding(event) {
     event.preventDefault();
     if (!activeCase) return;
     const form = new FormData(event.currentTarget);
     const finding = form.get("finding").toString().trim();
     if (!finding) return;
 
+    const id = nextFindingNumber(data.findings);
+    const newFinding = {
+      id,
+      caseId: activeCase.id,
+      finding,
+      description: form.get("description")?.toString().trim() || "",
+      officerInvolved: form.get("officerInvolved")?.toString().trim() || "",
+      iaRecommendation: form.get("iaRecommendation")?.toString().trim() || "",
+      iaRecommendationTemplate: form.get("iaRecommendationTemplate")?.toString() || "",
+      disciplineRecommendation: form.get("disciplineRecommendation")?.toString().trim() || "",
+      disciplineTemplate: form.get("disciplineTemplate")?.toString() || "None",
+      severityLevel: form.get("severityLevel")?.toString() || "None",
+      correctiveActionRecommendation: form.get("correctiveActionRecommendation")?.toString().trim() || "",
+      commandReview: form.get("commandReview")?.toString().trim() || "",
+      commandReviewStatus: form.get("commandReviewStatus")?.toString() || "Pending",
+      finalDisposition: form.get("finalDisposition")?.toString().trim() || "",
+      appealStatus: form.get("appealStatus")?.toString() || "None",
+      dateCreated: new Date().toISOString().slice(0, 10),
+      adjudicatedBy: form.get("adjudicatedBy")?.toString().trim() || "",
+    };
+
+    // Save to Supabase FIRST
+    try {
+      const supabaseData = {
+        finding_type: newFinding.finding,
+        case_id: newFinding.caseId,
+        description: newFinding.description,
+        severity: newFinding.severityLevel,
+        status: newFinding.appealStatus,
+      };
+      await findingsService.create(supabaseData);
+    } catch (error) {
+      alert("Error saving finding: " + error.message);
+      return;
+    }
+
+    // Then update local state
     const next = {
       ...data,
-      findings: [
-        {
-          id: nextFindingNumber(data.findings),
-          caseId: activeCase.id,
-          finding,
-          description: form.get("description")?.toString().trim() || "",
-          officerInvolved: form.get("officerInvolved")?.toString().trim() || "",
-          iaRecommendation: form.get("iaRecommendation")?.toString().trim() || "",
-          iaRecommendationTemplate: form.get("iaRecommendationTemplate")?.toString() || "",
-          disciplineRecommendation: form.get("disciplineRecommendation")?.toString().trim() || "",
-          disciplineTemplate: form.get("disciplineTemplate")?.toString() || "None",
-          severityLevel: form.get("severityLevel")?.toString() || "None",
-          correctiveActionRecommendation: form.get("correctiveActionRecommendation")?.toString().trim() || "",
-          commandReview: form.get("commandReview")?.toString().trim() || "",
-          commandReviewStatus: form.get("commandReviewStatus")?.toString() || "Pending",
-          finalDisposition: form.get("finalDisposition")?.toString().trim() || "",
-          appealStatus: form.get("appealStatus")?.toString() || "None",
-          dateCreated: new Date().toISOString().slice(0, 10),
-          adjudicatedBy: form.get("adjudicatedBy")?.toString().trim() || "",
-        },
-        ...data.findings,
-      ],
+      findings: [newFinding, ...data.findings],
     };
     save(next);
     event.currentTarget.reset();
   }
 
-  function editFinding(findingId, updates) {
+  async function editFinding(findingId, updates) {
+    const finding = data.findings.find(f => f.id === findingId);
+    if (!finding) return;
+
+    // Update in Supabase (note: we're updating by local ID which may not match Supabase UUID)
+    // For now, we'll just update local state and sync on next load
+    // TODO: Implement proper Supabase sync for finding updates
+
     const next = {
       ...data,
       findings: data.findings.map((f) =>
