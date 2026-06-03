@@ -801,3 +801,126 @@ export const realtimeService = {
     await supabase.removeAllChannels();
   },
 };
+
+// ============================================
+// RISK SCORE HISTORY
+// ============================================
+export const riskScoreHistoryService = {
+  getAll: async () => {
+    const { data, error } = await supabase
+      .from("risk_score_history")
+      .select("*")
+      .order("calculated_at", { ascending: false });
+    return { data, error };
+  },
+
+  getByOfficer: async (officerId) => {
+    const { data, error } = await supabase
+      .from("risk_score_history")
+      .select("*")
+      .eq("officer_id", officerId)
+      .order("calculated_at", { ascending: false });
+    return { data, error };
+  },
+
+  getRecentByOfficer: async (officerId, limit = 6) => {
+    const { data, error } = await supabase
+      .from("risk_score_history")
+      .select("*")
+      .eq("officer_id", officerId)
+      .order("calculated_at", { ascending: false })
+      .limit(limit);
+    return { data, error };
+  },
+
+  create: async (historyData) => {
+    const { data, error } = await supabase
+      .from("risk_score_history")
+      .insert([historyData])
+      .select()
+      .single();
+    return { data, error };
+  },
+};
+
+// ============================================
+// EI INTERVENTIONS
+// ============================================
+export const eiInterventionsService = {
+  getAll: async () => {
+    const { data, error } = await supabase
+      .from("ei_interventions")
+      .select("*")
+      .order("flagged_at", { ascending: false });
+    return { data, error };
+  },
+
+  getByOfficer: async (officerId) => {
+    const { data, error } = await supabase
+      .from("ei_interventions")
+      .select("*")
+      .eq("officer_id", officerId)
+      .order("flagged_at", { ascending: false });
+    return { data, error };
+  },
+
+  getUnresolved: async () => {
+    const { data, error } = await supabase
+      .from("ei_interventions")
+      .select("*")
+      .is("resolved_at", null)
+      .order("flagged_at", { ascending: false });
+    return { data, error };
+  },
+
+  create: async (interventionData) => {
+    const { data, error } = await supabase
+      .from("ei_interventions")
+      .insert([interventionData])
+      .select()
+      .single();
+    return { data, error };
+  },
+
+  update: async (id, updates) => {
+    const { data, error } = await supabase
+      .from("ei_interventions")
+      .update(updates)
+      .eq("id", id)
+      .select()
+      .single();
+    return { data, error };
+  },
+};
+
+// ============================================
+// EI WEIGHTS
+// ============================================
+export const eiWeightsService = {
+  getAll: async () => {
+    const { data, error } = await supabase
+      .from("ei_weights")
+      .select("*");
+    return { data, error };
+  },
+
+  update: async (id, updates) => {
+    const { data, error } = await supabase
+      .from("ei_weights")
+      .update(updates)
+      .eq("id", id)
+      .select()
+      .single();
+    return { data, error };
+  },
+
+  updateBySignalKey: async (signalKey, weight) => {
+    const { data, error } = await supabase
+      .from("ei_weights")
+      .update({ weight })
+      .eq("signal_key", signalKey)
+      .select()
+      .single();
+    return { data, error };
+  },
+};

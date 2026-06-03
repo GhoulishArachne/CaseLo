@@ -60,6 +60,9 @@ CREATE TABLE IF NOT EXISTS people (
   risk_score_override_date DATE,
   risk_score_override_reason TEXT,
   training_deficiencies TEXT,
+  risk_score INT DEFAULT 0,
+  risk_tier VARCHAR(20) DEFAULT 'Monitor',
+  risk_score_updated_at TIMESTAMP,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
@@ -218,6 +221,53 @@ CREATE INDEX IF NOT EXISTS idx_findings_case_id ON findings(case_id);
 CREATE INDEX IF NOT EXISTS idx_complaints_number ON complaints(complaint_number);
 
 -- ============================================
+-- TABLE: risk_score_history
+-- ============================================
+CREATE TABLE IF NOT EXISTS risk_score_history (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  officer_id UUID NOT NULL REFERENCES people(id) ON DELETE CASCADE,
+  score INT NOT NULL,
+  tier VARCHAR(20) NOT NULL,
+  calculated_at TIMESTAMP DEFAULT NOW(),
+  snapshot_json JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_risk_score_history_officer ON risk_score_history(officer_id);
+CREATE INDEX IF NOT EXISTS idx_risk_score_history_calculated ON risk_score_history(calculated_at DESC);
+
+-- ============================================
+-- TABLE: ei_interventions
+-- ============================================
+CREATE TABLE IF NOT EXISTS ei_interventions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  officer_id UUID NOT NULL REFERENCES people(id) ON DELETE CASCADE,
+  flagged_at TIMESTAMP DEFAULT NOW(),
+  tier_at_flag VARCHAR(20) NOT NULL,
+  action_taken TEXT,
+  actioned_by UUID REFERENCES people(id),
+  resolved_at TIMESTAMP,
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_ei_interventions_officer ON ei_interventions(officer_id);
+CREATE INDEX IF NOT EXISTS idx_ei_interventions_resolved ON ei_interventions(resolved_at);
+
+-- ============================================
+-- TABLE: ei_weights
+-- ============================================
+CREATE TABLE IF NOT EXISTS ei_weights (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  signal_key VARCHAR(50) NOT NULL UNIQUE,
+  weight INT DEFAULT 0,
+  updated_by UUID REFERENCES people(id),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- ============================================
 -- TABLE: document_folders
 -- ============================================
 CREATE TABLE IF NOT EXISTS document_folders (
@@ -332,6 +382,32 @@ CREATE POLICY "Enable all for authenticated users on document_folders" ON docume
 CREATE POLICY "Enable all for authenticated users on documents" ON documents
   FOR ALL USING (auth.role() = 'authenticated')
   WITH CHECK (auth.role() = 'authenticated');
+
+ALTER TABLE risk_score_history ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Enable all for authenticated users on risk_score_history" ON risk_score_history
+  FOR ALL USING (auth.role() = 'authenticated')
+  WITH CHECK (auth.role() = 'authenticated');
+
+ALTER TABLE ei_interventions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Enable all for authenticated users on ei_interventions" ON ei_interventions
+  FOR ALL USING (auth.role() = 'authenticated')
+  WITH CHECK (auth.role() = 'authenticated');
+
+ALTER TABLE ei_weights ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Enable all for authenticated users on ei_weights" ON ei_weights
+  FOR ALL USING (auth.role() = 'authenticated')
+  WITH CHECK (auth.role() = 'authenticated');
+
+-- ============================================
+-- Seed Data: EI Weights (Default Configuration)
+-- ============================================
+INSERT INTO ei_weights (signal_key, weight) VALUES
+('complaint_count', 25),
+('use_of_force_complaints', 30),
+('sustained_finding_ratio', 20),
+('complaint_velocity_spike', 15),
+('prior_ei_flag_unresolved', 10)
+ON CONFLICT (signal_key) DO NOTHING;
 
 -- ============================================
 -- Seed Data: Violations
