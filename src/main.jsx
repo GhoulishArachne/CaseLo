@@ -969,13 +969,44 @@ function App() {
     // syncToSupabase(next);
   }
 
-  function createCase(event) {
+  async function createCase(event) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const title = form.get("title").toString().trim();
     if (!title) return;
     const id = nextCaseNumber(data.cases);
     const opened = form.get("opened").toString() || new Date().toISOString().slice(0, 10);
+
+    const caseData = {
+      case_number: id,
+      title,
+      status: form.get("status"),
+      priority: form.get("priority"),
+      classification: form.get("classification").toString().trim() || "Unclassified",
+      investigation_type: form.get("investigationType").toString().trim() || "General",
+      opened,
+      closed: form.get("closed").toString() || null,
+      tags: form
+        .get("tags")
+        .toString()
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean),
+    };
+
+    // Save to Supabase FIRST before updating local state
+    try {
+      const { error } = await casesService.create(caseData);
+      if (error) {
+        alert("Error saving case: " + error.message);
+        return;
+      }
+    } catch (error) {
+      alert("Error saving case: " + error.message);
+      return;
+    }
+
+    // Now update local state
     const next = {
       ...data,
       cases: [
@@ -1756,7 +1787,7 @@ async function createPerson(event) {
     save(next);
   }
 
-  function addItem(event) {
+  async function addItem(event) {
     event.preventDefault();
     if (!activeCase) return;
     const form = new FormData(event.currentTarget);
@@ -1765,62 +1796,79 @@ async function createPerson(event) {
     const today = new Date().toISOString().slice(0, 10);
 
     const next = { ...data };
+    let itemToSave = null;
+
     if (quickAdd === "evidence") {
-      next.evidence = [
-        {
-          id: `EV-${String(data.evidence.length + 1).padStart(3, "0")}`,
-          title,
-          type: form.get("type") || "Document",
-          source: form.get("source").toString().trim() || "Unspecified",
-          obtained: today,
-          caseId: activeCase.id,
-          confidence: form.get("confidence") || "Needs review",
-          description: form.get("details").toString().trim(),
-        },
-        ...data.evidence,
-      ];
+      const newItem = {
+        id: `EV-${String(data.evidence.length + 1).padStart(3, "0")}`,
+        title,
+        type: form.get("type") || "Document",
+        source: form.get("source").toString().trim() || "Unspecified",
+        obtained: today,
+        caseId: activeCase.id,
+        confidence: form.get("confidence") || "Needs review",
+        description: form.get("details").toString().trim(),
+      };
+      next.evidence = [newItem, ...data.evidence];
+      itemToSave = { type: "evidence", data: { evidence_type: newItem.type, title: newItem.title, source: newItem.source, obtained: newItem.obtained, case_id: newItem.caseId, confidence: newItem.confidence, description: newItem.description } };
     }
     if (quickAdd === "event") {
-      next.events = [
-        {
-          id: `TL-${String(data.events.length + 1).padStart(3, "0")}`,
-          title,
-          date: form.get("date") || today,
-          time: form.get("time") || "",
-          location: form.get("source").toString().trim() || "Unspecified",
-          caseId: activeCase.id,
-          support: "",
-          confidence: form.get("confidence") || "Medium",
-        },
-        ...data.events,
-      ];
+      const newItem = {
+        id: `TL-${String(data.events.length + 1).padStart(3, "0")}`,
+        title,
+        date: form.get("date") || today,
+        time: form.get("time") || "",
+        location: form.get("source").toString().trim() || "Unspecified",
+        caseId: activeCase.id,
+        support: "",
+        confidence: form.get("confidence") || "Medium",
+      };
+      next.events = [newItem, ...data.events];
+      itemToSave = { type: "event", data: { title: newItem.title, date: newItem.date, time: newItem.time, location: newItem.location, case_id: newItem.caseId, confidence: newItem.confidence } };
     }
     if (quickAdd === "note") {
-      next.notes = [
-        {
-          id: `N-${String(data.notes.length + 1).padStart(3, "0")}`,
-          title,
-          body: form.get("details").toString().trim(),
-          caseId: activeCase.id,
-          created: today,
-          tag: form.get("type") || "General",
-        },
-        ...data.notes,
-      ];
+      const newItem = {
+        id: `N-${String(data.notes.length + 1).padStart(3, "0")}`,
+        title,
+        body: form.get("details").toString().trim(),
+        caseId: activeCase.id,
+        created: today,
+        tag: form.get("type") || "General",
+      };
+      next.notes = [newItem, ...data.notes];
+      itemToSave = { type: "note", data: { title: newItem.title, body: newItem.body, case_id: newItem.caseId, created: newItem.created, tag: newItem.tag } };
     }
     if (quickAdd === "task") {
-      next.tasks = [
-        {
-          id: `T-${String(data.tasks.length + 1).padStart(3, "0")}`,
-          title,
-          status: "Open",
-          priority: form.get("confidence") || "Medium",
-          due: form.get("date") || today,
-          caseId: activeCase.id,
-        },
-        ...data.tasks,
-      ];
+      const newItem = {
+        id: `T-${String(data.tasks.length + 1).padStart(3, "0")}`,
+        title,
+        status: "Open",
+        priority: form.get("confidence") || "Medium",
+        due: form.get("date") || today,
+        caseId: activeCase.id,
+      };
+      next.tasks = [newItem, ...data.tasks];
+      itemToSave = { type: "task", data: { title: newItem.title, status: newItem.status, priority: newItem.priority, due: newItem.due, case_id: newItem.caseId } };
     }
+
+    // Save to Supabase FIRST before updating local state
+    if (itemToSave) {
+      try {
+        if (itemToSave.type === "evidence") {
+          await evidenceService.create(itemToSave.data);
+        } else if (itemToSave.type === "event") {
+          await eventsService.create(itemToSave.data);
+        } else if (itemToSave.type === "note") {
+          await notesService.create(itemToSave.data);
+        } else if (itemToSave.type === "task") {
+          await tasksService.create(itemToSave.data);
+        }
+      } catch (error) {
+        alert("Error saving item to database: " + error.message);
+        return;
+      }
+    }
+
     save(next);
     event.currentTarget.reset();
   }
