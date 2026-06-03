@@ -41,6 +41,9 @@ import {
   documentFoldersService,
   documentsService,
   storageService,
+  riskScoreHistoryService,
+  eiInterventionsService,
+  eiWeightsService,
 } from "./supabaseService";
 
 const seedData = {
@@ -1457,6 +1460,218 @@ function App() {
     for (const x of a) if (b.has(x)) inter++;
     const union = a.size + b.size - inter;
     return union ? inter / union : 0;
+  }
+
+  // ============================================
+  // EARLY INTERVENTION RISK SCORING
+  // ============================================
+
+  async function calculateEarlyInterventionScore(officerId, allWeights) {
+    // Get officer data
+    const officer = data.people.find(p => p.id === officerId);
+    if (!officer) return null;
+
+    // Get 12-month date range
+    const now = new Date();
+    const oneYearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+    const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+    const oneEightyDaysAgo = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
+
+    // Calculate signals
+    const signals = {};
+    const signalSnapshots = {};
+
+    // Signal 1: Complaint count (12 months) normalized against dept max
+    const allComplaints12m = data.complaints.filter(c => new Date(c.date) >= oneYearAgo);
+    const officerComplaints12m = allComplaints12m.filter(c =>
+      c.subjectOfficerIds && c.subjectOfficerIds.includes(officerId)
+    );
+    const maxComplaints = Math.max(...data.people.map(p =>
+      allComplaints12m.filter(c => c.subjectOfficerIds && c.subjectOfficerIds.includes(p.id)).length
+    ), 1);
+    signals.complaint_count = Math.min(officerComplaints12m.length / maxComplaints, 1);
+    signalSnapshots.complaint_count = {
+      value: officerComplaints12m.length,
+      max: maxComplaints,
+      normalized: signals.complaint_count.toFixed(2)
+    };
+
+    // Signal 2: Use-of-force complaints
+    const uofComplaints = officerComplaints12m.filter(c =>
+      c.complaintType === "Use of Force" || c.category?.toLowerCase().includes("force")
+    );
+    const maxUofComplaints = Math.max(...data.people.map(p =>
+      allComplaints12m.filter(c =>
+        (c.complaintType === "Use of Force" || c.category?.toLowerCase().includes("force")) &&
+        c.subjectOfficerIds && c.subjectOfficerIds.includes(p.id)
+      ).length
+    ), 1);
+    signals.use_of_force_complaints = Math.min(uofComplaints.length / maxUofComplaints, 1);
+    signalSnapshots.use_of_force_complaints = {
+      value: uofComplaints.length,
+      max: maxUofComplaints,
+      normalized: signals.use_of_force_complaints.toFixed(2)
+    };
+
+    // Signal 3: Sustained finding ratio
+    const officerFindings = data.findings.filter(f => {
+      const finding = data.cases.find(c => c.id === f.caseId);
+      return finding && finding.id && f.caseId;
+    });
+    const sustainedFindings = officerFindings.filter(f =>
+      f.finding?.toLowerCase().includes("sustained") || f.appealStatus === "Sustained"
+    );
+    signals.sustained_finding_ratio = officerFindings.length > 0
+      ? sustainedFindings.length / officerFindings.length
+      : 0;
+    signalSnapshots.sustained_finding_ratio = {
+      sustained: sustainedFindings.length,
+      total: officerFindings.length,
+      ratio: signals.sustained_finding_ratio.toFixed(2)
+    };
+
+    // Signal 4: Complaint velocity spike (last 90 days vs prior 90 days)
+    const recentComplaints = officerComplaints12m.filter(c => new Date(c.date) >= ninetyDaysAgo);
+    const priorComplaints = officerComplaints12m.filter(c => {
+      const cDate = new Date(c.date);
+      return cDate >= oneEightyDaysAgo && cDate < ninetyDaysAgo;
+    });
+    const velocityRatio = priorComplaints.length > 0
+      ? recentComplaints.length / priorComplaints.length
+      : (recentComplaints.length > 0 ? 2 : 0);
+    signals.complaint_velocity_spike = velocityRatio > 1.5 ? Math.min((velocityRatio - 1) / 2, 1) : 0;
+    signalSnapshots.complaint_velocity_spike = {
+      recent_90d: recentComplaints.length,
+      prior_90d: priorComplaints.length,
+      ratio: velocityRatio.toFixed(2),
+      spike_detected: velocityRatio > 1.5
+    };
+
+    // Signal 5: Prior EI flag unresolved
+    const { data: priorInterventions } = await eiInterventionsService.getByOfficer(officerId);
+    const unresolvedFlags = priorInterventions?.filter(i => !i.resolved_at) || [];
+    signals.prior_ei_flag_unresolved = unresolvedFlags.length > 0 ? 1 : 0;
+    signalSnapshots.prior_ei_flag_unresolved = {
+      has_unresolved: unresolvedFlags.length > 0,
+      count: unresolvedFlags.length
+    };
+
+    // Normalize weights
+    const totalWeight = Object.values(allWeights).reduce((a, b) => a + b, 0);
+    const normalizedWeights = {};
+    for (const key in allWeights) {
+      normalizedWeights[key] = allWeights[key] / totalWeight;
+    }
+
+    // Calculate final score
+    let score = 0;
+    for (const signalKey in signals) {
+      if (normalizedWeights[signalKey]) {
+        score += signals[signalKey] * normalizedWeights[signalKey] * 100;
+      }
+    }
+    score = Math.round(score);
+
+    // Determine tier (default thresholds)
+    let tier = "Monitor";
+    if (score >= 70) tier = "Intervene";
+    else if (score >= 40) tier = "Review";
+
+    return {
+      score,
+      tier,
+      signals,
+      signalSnapshots,
+      calculatedAt: new Date().toISOString()
+    };
+  }
+
+  async function updateOfficerRiskScore(officerId) {
+    // Get current weights from Supabase
+    const { data: weights } = await eiWeightsService.getAll();
+    if (!weights || weights.length === 0) return;
+
+    const weightMap = {};
+    weights.forEach(w => {
+      weightMap[w.signal_key] = w.weight;
+    });
+
+    // Calculate score
+    const scoreResult = await calculateEarlyInterventionScore(officerId, weightMap);
+    if (!scoreResult) return;
+
+    // Update officer record
+    try {
+      await peopleService.update(officerId, {
+        risk_score: scoreResult.score,
+        risk_tier: scoreResult.tier,
+        risk_score_updated_at: scoreResult.calculatedAt,
+      });
+    } catch (error) {
+      console.error("Error updating officer risk score:", error);
+    }
+
+    // Save to history
+    try {
+      await riskScoreHistoryService.create({
+        officer_id: officerId,
+        score: scoreResult.score,
+        tier: scoreResult.tier,
+        snapshot_json: scoreResult.signalSnapshots,
+      });
+    } catch (error) {
+      console.error("Error saving risk score history:", error);
+    }
+
+    // Check if crossed into Intervene tier and no unresolved intervention exists
+    if (scoreResult.tier === "Intervene") {
+      const { data: unresolvedInterventions } = await eiInterventionsService.getByOfficer(officerId);
+      const hasUnresolved = unresolvedInterventions?.some(i => !i.resolved_at);
+
+      if (!hasUnresolved) {
+        // Create intervention record and auto-task
+        try {
+          await eiInterventionsService.create({
+            officer_id: officerId,
+            tier_at_flag: scoreResult.tier,
+          });
+
+          // Create task for supervisor (store in local state for now)
+          const officer = data.people.find(p => p.id === officerId);
+          if (officer) {
+            const supervisorDivision = officer.division || "Command";
+            const supervisors = data.people.filter(p =>
+              p.division === supervisorDivision &&
+              (p.rank?.includes("Supervisor") || p.rank?.includes("Commander") || p.rank?.includes("Chief"))
+            );
+
+            if (supervisors.length > 0) {
+              const now = new Date();
+              const dueDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+              const task = {
+                id: `T-${String(data.tasks.length + 1).padStart(3, "0")}`,
+                title: `EI Review Required — ${officer.name}`,
+                status: "Open",
+                priority: "High",
+                due: dueDate.toISOString().slice(0, 10),
+                linkedOfficerId: officerId,
+                createdAt: now.toISOString(),
+              };
+
+              const next = {
+                ...data,
+                tasks: [task, ...data.tasks],
+              };
+              save(next);
+            }
+          }
+        } catch (error) {
+          console.error("Error creating EI intervention:", error);
+        }
+      }
+    }
+
+    return scoreResult;
   }
 
   function computeComplaintScreening(candidate, existingComplaints) {
