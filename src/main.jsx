@@ -1857,6 +1857,7 @@ async function createPerson(event) {
     };
 
     // Save to Supabase FIRST
+    let supabaseId = null;
     try {
       const supabaseData = {
         finding_type: newFinding.finding,
@@ -1865,16 +1866,21 @@ async function createPerson(event) {
         severity: newFinding.severityLevel,
         status: newFinding.appealStatus,
       };
-      await findingsService.create(supabaseData);
+      const { data: created, error } = await findingsService.create(supabaseData);
+      if (error) {
+        alert("Error saving finding: " + error.message);
+        return;
+      }
+      supabaseId = created?.id;
     } catch (error) {
       alert("Error saving finding: " + error.message);
       return;
     }
 
-    // Then update local state
+    // Then update local state with Supabase ID
     const next = {
       ...data,
-      findings: [newFinding, ...data.findings],
+      findings: [{ ...newFinding, supabaseId }, ...data.findings],
     };
     save(next);
     event.currentTarget.reset();
@@ -1884,10 +1890,17 @@ async function createPerson(event) {
     const finding = data.findings.find(f => f.id === findingId);
     if (!finding) return;
 
-    // Update in Supabase (note: we're updating by local ID which may not match Supabase UUID)
-    // For now, we'll just update local state and sync on next load
-    // TODO: Implement proper Supabase sync for finding updates
+    // Save to Supabase FIRST if we have a Supabase ID
+    if (finding.supabaseId) {
+      try {
+        await findingsService.update(finding.supabaseId, updates);
+      } catch (error) {
+        console.error("Error updating finding in Supabase:", error);
+        // Continue with local update even if Supabase fails
+      }
+    }
 
+    // Then update local state
     const next = {
       ...data,
       findings: data.findings.map((f) =>
