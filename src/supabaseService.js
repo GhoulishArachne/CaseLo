@@ -42,14 +42,14 @@ export const casesService = {
   getAll: async () => {
     const { data, error } = await supabase
       .from("cases")
-      .select("id,case_number,title,status,priority,opened,created_at,updated_at");
+      .select("id,case_number,title,status,priority,opened,report,created_at,updated_at");
     return { data, error };
   },
 
   getOne: async (id) => {
     const { data, error } = await supabase
       .from("cases")
-      .select("id,case_number,title,status,priority,opened,created_at,updated_at")
+      .select("id,case_number,title,status,priority,opened,report,created_at,updated_at")
       .eq("id", id)
       .single();
     return { data, error };
@@ -59,7 +59,7 @@ export const casesService = {
     const { data, error } = await supabase
       .from("cases")
       .insert([caseData])
-      .select("id,case_number,title,status,priority,opened,created_at,updated_at");
+      .select("id,case_number,title,status,priority,opened,report,created_at,updated_at");
     return { data: data?.[0] || null, error };
   },
 

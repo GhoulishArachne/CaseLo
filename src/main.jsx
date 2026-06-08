@@ -813,20 +813,23 @@ function App() {
   const navItems = ["Dashboard", "Cases", "Evidence", "People", "Officer Profile", "Records", "Timeline", "Tasks", "Notes", "Complaints", "Adjudication", "Reports", "Settings"];
   const [themeIndex, setThemeIndex] = useState(() => {
     const saved = localStorage.getItem("theme-index");
-    return saved ? parseInt(saved) : 0;
+    const index = saved ? parseInt(saved) : 0;
+    return Math.min(Math.max(index, 0), themeColors.length - 1);
   });
 
   useMemo(() => {
     const theme = themeColors[themeIndex];
-    document.documentElement.style.setProperty("--theme-dark", theme.dark);
-    document.documentElement.style.setProperty("--theme-accent", theme.accent);
-    document.documentElement.style.setProperty("--theme-text", theme.text);
-    document.documentElement.style.setProperty("--dept-name", theme.departmentName);
-    document.documentElement.style.setProperty("--dept-logo-url", theme.departmentLogoUrl ? `url('${theme.departmentLogoUrl}')` : "none");
-    document.documentElement.style.setProperty("--report-header", theme.reportHeaderText);
-    document.documentElement.style.setProperty("--signature-block", theme.signatureBlockText);
-    document.documentElement.style.setProperty("--secondary-accent", theme.accentSecondaryColor);
-    localStorage.setItem("theme-index", themeIndex.toString());
+    if (theme) {
+      document.documentElement.style.setProperty("--theme-dark", theme.dark);
+      document.documentElement.style.setProperty("--theme-accent", theme.accent);
+      document.documentElement.style.setProperty("--theme-text", theme.text);
+      document.documentElement.style.setProperty("--dept-name", theme.departmentName);
+      document.documentElement.style.setProperty("--dept-logo-url", theme.departmentLogoUrl ? `url('${theme.departmentLogoUrl}')` : "none");
+      document.documentElement.style.setProperty("--report-header", theme.reportHeaderText);
+      document.documentElement.style.setProperty("--signature-block", theme.signatureBlockText);
+      document.documentElement.style.setProperty("--secondary-accent", theme.accentSecondaryColor);
+      localStorage.setItem("theme-index", themeIndex.toString());
+    }
   }, [themeIndex]);
 
   const [selectedOfficerId, setSelectedOfficerId] = useState(null);
@@ -863,12 +866,15 @@ function App() {
     const title = form.get("title").toString().trim();
     if (!title) return;
     const id = nextCaseNumber(data.cases);
-    const opened = form.get("opened").toString();
+
+    // Auto-set date in Eastern Standard Time
+    const estDate = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
+    const opened = estDate.split(',')[0]; // Get just the date part (MM/DD/YYYY)
 
     const caseData = {
       case_number: id,
       title,
-      status: form.get("status"),
+      status: "Intake",
       priority: form.get("priority"),
       opened,
     };
@@ -894,7 +900,7 @@ function App() {
         {
           id: supabaseId || id,
           title,
-          status: form.get("status"),
+          status: "Intake",
           priority: form.get("priority"),
           opened,
         },
@@ -2757,25 +2763,14 @@ async function createPerson(event) {
         )}
 
         {activeView === "Cases" && (
-          <section className="single-grid">
+          <section style={{ display: "grid", gridTemplateColumns: "280px 1fr 300px", gap: 12, height: "100%" }}>
+            {/* Left: Case List */}
             <CaseList activeCase={activeCase} caseFilter={caseFilter} filteredCases={filteredCases} setActiveCaseId={setActiveCaseId} setCaseFilter={setCaseFilter} />
-            <div style={{ display: "grid", gridTemplateRows: "1fr auto", gap: 12, height: "100%" }}>
-              <CaseDetail activeCase={activeCase} caseRecords={caseRecords} data={data} setData={setData} editFinding={editFinding} deleteCase={deleteCase} />
-              <div style={{ background: "white", border: "1px solid #dce4e1", borderRadius: 8, padding: 16, maxHeight: "200px", overflowY: "auto" }}>
-                <h4 style={{ margin: "0 0 12px 0", fontSize: 14, fontWeight: 700, color: "var(--theme-text)" }}>Evidence</h4>
-                <div style={{ display: "grid", gap: 8 }}>
-                  {caseRecords.evidence?.length ? (
-                    caseRecords.evidence.map((item) => (
-                      <div key={item.id} style={{ background: "#f6f9f7", padding: 8, borderRadius: 6, fontSize: 12, color: "var(--theme-text)" }}>
-                        <strong style={{ color: "var(--theme-text)" }}>{item.type}</strong> • {item.source}
-                      </div>
-                    ))
-                  ) : (
-                    <p style={{ margin: 0, color: "var(--theme-text)", fontSize: 12 }}>No evidence yet</p>
-                  )}
-                </div>
-              </div>
-            </div>
+
+            {/* Middle: Case Detail */}
+            <CaseDetail activeCase={activeCase} caseRecords={caseRecords} data={data} setData={setData} editFinding={editFinding} deleteCase={deleteCase} />
+
+            {/* Right: New Case Form */}
             <Forms activeCase={activeCase} addItem={addItem} createCase={createCase} quickAdd={quickAdd} setQuickAdd={setQuickAdd} />
           </section>
         )}
@@ -2888,59 +2883,139 @@ function CaseList({ activeCase, caseFilter, filteredCases, setActiveCaseId, setC
 
 function CaseDetail({ activeCase, caseRecords, data, setData, editFinding, deleteCase }) {
   return (
-    <section className="case-detail">
+    <section style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: 12, height: "100%", overflow: "auto" }}>
       {activeCase ? (
         <>
-          <div className="detail-head">
+          {/* Left: Case header and report */}
+          <div style={{ display: "grid", gridTemplateRows: "auto auto 1fr auto", gap: 12 }}>
+            {/* Case Header */}
             <div>
-              <span className="case-id">{activeCase.id}</span>
-              <h2>{activeCase.title}</h2>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "flex-end" }}>
-              <div className="status-strip">
+              <span style={{ fontSize: 12, color: "#999", fontWeight: 600 }}>{activeCase.id}</span>
+              <h2 style={{ margin: "4px 0 0 0", fontSize: 24, fontWeight: 700, color: "var(--theme-text)" }}>{activeCase.title}</h2>
+              <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
                 <Pill value={activeCase.status} />
                 <Pill value={activeCase.priority} />
+                <span style={{ fontSize: 12, color: "#999" }}>Opened {activeCase.opened}</span>
               </div>
-              <button
-                type="button"
-                onClick={() => deleteCase(activeCase.id)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  border: 0,
-                  background: "#fee5e3",
-                  color: "#b6492b",
-                  borderRadius: 6,
-                  padding: "8px 12px",
-                  cursor: "pointer",
-                  fontWeight: 700,
-                  fontSize: 13,
-                }}
-              >
-                <Trash2 size={16} />
-                Delete
-              </button>
             </div>
+
+            {/* Report Text Area with Toolbar */}
+            <div style={{ border: "1px solid #dce4e1", borderRadius: 8, overflow: "hidden", display: "grid", gridTemplateRows: "auto 1fr" }}>
+              <div style={{ background: "#f9fafb", borderBottom: "1px solid #dce4e1", padding: "8px 12px", display: "flex", gap: 8, alignItems: "center" }}>
+                <button type="button" title="Bold" style={{ all: "unset", padding: "4px 8px", cursor: "pointer", fontWeight: 700, fontSize: 12 }}>B</button>
+                <button type="button" title="Italic" style={{ all: "unset", padding: "4px 8px", cursor: "pointer", fontStyle: "italic", fontSize: 12 }}>I</button>
+                <div style={{ width: "1px", height: 16, background: "#dce4e1" }} />
+                <button type="button" title="Bullet List" style={{ all: "unset", padding: "4px 8px", cursor: "pointer", fontSize: 12 }}>• List</button>
+              </div>
+              <textarea
+                placeholder="Enter case report here..."
+                value={activeCase.report || ""}
+                onChange={(e) => {
+                  const updated = { ...activeCase, report: e.target.value };
+                  const newData = {
+                    ...data,
+                    cases: data.cases.map(c => c.id === activeCase.id ? updated : c)
+                  };
+                  setData(newData);
+
+                  // Debounce save to Supabase (save after 1 second of no changes)
+                  clearTimeout(window.reportSaveTimeout);
+                  window.reportSaveTimeout = setTimeout(() => {
+                    casesService.update(activeCase.id, { report: e.target.value }).catch(err => console.error("Failed to save report:", err));
+                  }, 1000);
+                }}
+                style={{
+                  padding: 12,
+                  border: "none",
+                  fontFamily: "system-ui, -apple-system, sans-serif",
+                  fontSize: 14,
+                  resize: "none",
+                  outline: "none"
+                }}
+              />
+            </div>
+
+            {/* Other Sections */}
+            <div style={{ display: "grid", gap: 12, overflow: "auto" }}>
+              <RecordPanel title="Tasks" icon={CheckCircle2} items={caseRecords.tasks} render={TaskItem} />
+              <RecordPanel title="Notes" icon={FileSearch} items={caseRecords.notes} render={NoteItem} wide />
+              <RecordPanel title="Timeline" icon={Clock} items={caseRecords.events} render={EventItem} />
+              <RecordPanel title="Findings & Adjudication" icon={CheckCircle2} items={caseRecords.findings} render={FindingItem} wide />
+            </div>
+
+            <AdjudicationPanel caseId={activeCase.id} findings={caseRecords.findings} editFinding={editFinding} people={data.people} />
           </div>
 
-          <div className="case-fields">
-            <InfoField label="Date opened" value={activeCase.opened} />
-          </div>
+          {/* Right: Evidence and People & Entities */}
+          <div style={{ display: "grid", gridTemplateRows: "auto auto 1fr auto", gap: 12 }}>
+            {/* Evidence */}
+            <div style={{ background: "white", border: "1px solid #dce4e1", borderRadius: 8, padding: 12 }}>
+              <h4 style={{ margin: "0 0 8px 0", fontSize: 13, fontWeight: 700, color: "var(--theme-text)", display: "flex", alignItems: "center", gap: 6 }}>
+                <Fingerprint size={16} />
+                Evidence
+              </h4>
+              <div style={{ display: "grid", gap: 6, maxHeight: "120px", overflowY: "auto" }}>
+                {caseRecords.evidence?.length ? (
+                  caseRecords.evidence.map((item) => (
+                    <div key={item.id} style={{ background: "#f6f9f7", padding: 6, borderRadius: 4, fontSize: 11, color: "var(--theme-text)" }}>
+                      <strong>{item.type}</strong>
+                    </div>
+                  ))
+                ) : (
+                  <p style={{ margin: 0, color: "#999", fontSize: 11 }}>No evidence added</p>
+                )}
+              </div>
+            </div>
 
-          <div className="record-grid">
-            <RecordPanel title="Evidence" icon={Fingerprint} items={caseRecords.evidence} render={EvidenceItem} />
-            <RecordPanel title="Timeline" icon={Clock} items={caseRecords.events} render={EventItem} />
-            <RecordPanel title="People & Entities" icon={UserRound} items={caseRecords.people} render={PersonItem} />
-            <RecordPanel title="Tasks" icon={CheckCircle2} items={caseRecords.tasks} render={TaskItem} />
-            <RecordPanel title="Notes" icon={FileSearch} items={caseRecords.notes} render={NoteItem} wide />
-            <RecordPanel title="Findings & Adjudication" icon={CheckCircle2} items={caseRecords.findings} render={FindingItem} wide />
-          </div>
+            {/* People & Entities */}
+            <div style={{ background: "white", border: "1px solid #dce4e1", borderRadius: 8, padding: 12 }}>
+              <h4 style={{ margin: "0 0 8px 0", fontSize: 13, fontWeight: 700, color: "var(--theme-text)", display: "flex", alignItems: "center", gap: 6 }}>
+                <UserRound size={16} />
+                People
+              </h4>
+              <div style={{ display: "grid", gap: 6, maxHeight: "120px", overflowY: "auto" }}>
+                {caseRecords.people?.length ? (
+                  caseRecords.people.map((item) => (
+                    <div key={item.id} style={{ background: "#f0f5f9", padding: 6, borderRadius: 4, fontSize: 11, color: "var(--theme-text)" }}>
+                      <strong>{item.name}</strong>
+                      {item.badgeNumber && <div style={{ fontSize: 10, color: "#999" }}>#{item.badgeNumber}</div>}
+                    </div>
+                  ))
+                ) : (
+                  <p style={{ margin: 0, color: "#999", fontSize: 11 }}>No people added</p>
+                )}
+              </div>
+            </div>
 
-          <AdjudicationPanel caseId={activeCase.id} findings={caseRecords.findings} editFinding={editFinding} people={data.people} />
+            {/* Delete Button */}
+            <button
+              type="button"
+              onClick={() => deleteCase(activeCase.id)}
+              style={{
+                marginTop: "auto",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+                border: 0,
+                background: "#fee5e3",
+                color: "#b6492b",
+                borderRadius: 6,
+                padding: "8px 12px",
+                cursor: "pointer",
+                fontWeight: 700,
+                fontSize: 13,
+              }}
+            >
+              <Trash2 size={16} />
+              Delete
+            </button>
+          </div>
         </>
       ) : (
-        <div className="empty">Create a case to begin logging records.</div>
+        <div style={{ gridColumn: "1/-1", display: "flex", alignItems: "center", justifyContent: "center", minHeight: 300, color: "#999", fontSize: 14 }}>
+          Create a case to begin logging records.
+        </div>
       )}
     </section>
   );
@@ -2948,34 +3023,32 @@ function CaseDetail({ activeCase, caseRecords, data, setData, editFinding, delet
 
 function Forms({ activeCase, addItem, createCase, quickAdd, setQuickAdd }) {
   return (
-    <section className="panel forms">
+    <section className="panel forms" style={{ display: "grid", gridTemplateRows: "auto auto 1fr", gap: 12, height: "100%", overflow: "auto" }}>
       <div className="panel-head">
         <h2>New Case</h2>
         <Plus size={18} />
       </div>
-      <form onSubmit={createCase}>
-        <input name="title" placeholder="Case title" required />
-        <div className="row">
-          <select name="status" defaultValue="Intake">
-            <option>Intake</option>
-            <option>Active</option>
-            <option>Closed</option>
-          </select>
-          <select name="priority" defaultValue="Medium">
+      <form onSubmit={createCase} style={{ display: "grid", gap: 12 }}>
+        <div>
+          <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
+            Case Title
+          </label>
+          <input name="title" placeholder="Enter case title" required style={{ width: "100%", padding: "8px 12px", border: "1px solid #dce4e1", borderRadius: 4, fontSize: 14 }} />
+        </div>
+        <div>
+          <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
+            Priority Level
+          </label>
+          <select name="priority" defaultValue="Medium" style={{ width: "100%", padding: "8px 12px", border: "1px solid #dce4e1", borderRadius: 4, fontSize: 14 }}>
+            <option>Critical</option>
             <option>High</option>
             <option>Medium</option>
             <option>Low</option>
           </select>
         </div>
-        <div>
-          <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
-            Date Opened
-          </label>
-          <input name="opened" type="date" required />
-        </div>
-        <button className="primary" type="submit">
+        <button className="primary" type="submit" style={{ marginTop: "auto" }}>
           <FilePlus2 size={17} />
-          Create case
+          Create Case
         </button>
       </form>
 
