@@ -305,7 +305,7 @@ const rankOrder = ["Chief of Police", "Deputy Chief", "Commander", "Captain", "L
 
 const themeColors = [
   {
-    name: "Command Operations Center (Recommended)",
+    name: "Dark",
     dark: "#0B1220",
     accent: "#3B82F6",
     text: "#F3F4F6",
@@ -316,125 +316,15 @@ const themeColors = [
     accentSecondaryColor: "#10B981",
   },
   {
-    name: "Police Headquarters",
-    dark: "#111827",
-    accent: "#D4AF37",
-    text: "#F3F4F6",
-    departmentName: "Police Department",
-    departmentLogoUrl: "",
-    reportHeaderText: "Internal Affairs Investigation",
-    signatureBlockText: "Authorized by: ",
-    accentSecondaryColor: "#F3F4F6",
-  },
-  {
-    name: "Government Records System",
-    dark: "#F3F4F6",
+    name: "Light",
+    dark: "#F9FAFB",
     accent: "#2563EB",
     text: "#1F2937",
     departmentName: "Police Department",
     departmentLogoUrl: "",
     reportHeaderText: "Internal Affairs Investigation",
     signatureBlockText: "Authorized by: ",
-    accentSecondaryColor: "#111827",
-  },
-  {
-    name: "Tactical Operations Center",
-    dark: "#050505",
-    accent: "#22C55E",
-    text: "#F3F4F6",
-    departmentName: "Police Department",
-    departmentLogoUrl: "",
-    reportHeaderText: "Internal Affairs Investigation",
-    signatureBlockText: "Authorized by: ",
-    accentSecondaryColor: "#EF4444",
-  },
-  {
-    name: "Department Coordinator Executive Suite",
-    dark: "#0F172A",
-    accent: "#94A3B8",
-    text: "#F3F4F6",
-    departmentName: "Police Department",
-    departmentLogoUrl: "",
-    reportHeaderText: "Internal Affairs Investigation",
-    signatureBlockText: "Authorized by: ",
-    accentSecondaryColor: "#F8FAFC",
-  },
-  {
-    name: "Intelligence Bureau",
-    dark: "#111827",
-    accent: "#06B6D4",
-    text: "#F3F4F6",
-    departmentName: "Police Department",
-    departmentLogoUrl: "",
-    reportHeaderText: "Internal Affairs Investigation",
-    signatureBlockText: "Authorized by: ",
-    accentSecondaryColor: "#F3F4F6",
-  },
-  {
-    name: "Monochrome Professional",
-    dark: "#F5F5F5",
-    accent: "#1F2937",
-    text: "#1F2937",
-    departmentName: "Police Department",
-    departmentLogoUrl: "",
-    reportHeaderText: "Internal Affairs Investigation",
-    signatureBlockText: "Authorized by: ",
-    accentSecondaryColor: "#6B7280",
-  },
-  {
-    name: "Warm Sunset",
-    dark: "#FFF8F3",
-    accent: "#C2410C",
-    text: "#1F2937",
-    departmentName: "Police Department",
-    departmentLogoUrl: "",
-    reportHeaderText: "Internal Affairs Investigation",
-    signatureBlockText: "Authorized by: ",
-    accentSecondaryColor: "#EA580C",
-  },
-  {
-    name: "Cool Arctic",
-    dark: "#F0F9FF",
-    accent: "#0369A1",
-    text: "#1F2937",
-    departmentName: "Police Department",
-    departmentLogoUrl: "",
-    reportHeaderText: "Internal Affairs Investigation",
-    signatureBlockText: "Authorized by: ",
-    accentSecondaryColor: "#06B6D4",
-  },
-  {
-    name: "Dark Neon",
-    dark: "#0D0D0D",
-    accent: "#39FF14",
-    text: "#F3F4F6",
-    departmentName: "Police Department",
-    departmentLogoUrl: "",
-    reportHeaderText: "Internal Affairs Investigation",
-    signatureBlockText: "Authorized by: ",
-    accentSecondaryColor: "#FF10F0",
-  },
-  {
-    name: "Classic Government",
-    dark: "#F9FAFB",
-    accent: "#7C2D12",
-    text: "#1F2937",
-    departmentName: "Police Department",
-    departmentLogoUrl: "",
-    reportHeaderText: "Internal Affairs Investigation",
-    signatureBlockText: "Authorized by: ",
-    accentSecondaryColor: "#B45309",
-  },
-  {
-    name: "High-Tech Blue",
-    dark: "#0C1929",
-    accent: "#00D4FF",
-    text: "#F3F4F6",
-    departmentName: "Police Department",
-    departmentLogoUrl: "",
-    reportHeaderText: "Internal Affairs Investigation",
-    signatureBlockText: "Authorized by: ",
-    accentSecondaryColor: "#0084FF",
+    accentSecondaryColor: "#1F2937",
   },
 ];
 
@@ -2541,8 +2431,6 @@ async function createPerson(event) {
 
   const metrics = [
     { label: "Active cases", value: data.cases.filter((item) => !["Closed", "Archived"].includes(item.status)).length, icon: FileSearch },
-    { label: "Evidence items", value: data.evidence.length, icon: Fingerprint },
-    { label: "Timeline events", value: data.events.length, icon: CalendarDays },
     { label: "Open tasks", value: data.tasks.filter((item) => item.status !== "Done").length, icon: ClipboardList },
   ];
 
@@ -2580,7 +2468,7 @@ async function createPerson(event) {
   }
 
   return (
-    <main style={{ display: "grid", gridTemplateRows: "80px 1fr", minHeight: "100vh", background: "var(--theme-light)" }}>
+    <main style={{ display: "grid", gridTemplateRows: "128px 1fr", minHeight: "100vh", background: "var(--theme-light)" }}>
       {/* Top Navigation Bar */}
       <header style={{
         display: "grid",
@@ -2634,7 +2522,7 @@ async function createPerson(event) {
         background: "white",
         gap: 0,
         position: "absolute",
-        top: 80,
+        top: 128,
         left: 0,
         right: 0,
         height: 50,
@@ -2671,9 +2559,8 @@ async function createPerson(event) {
         padding: "24px"
       }}>
         {activeView === "Dashboard" && (
-          <div style={{ padding: "0" }}>
-            <MetricGrid metrics={metrics} />
-
+          <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 24, alignItems: "flex-start" }}>
+            <div style={{ minWidth: 0, display: "grid", gap: 24 }}>
             {/* Escalation Alerts Section */}
             {(() => {
               const escalatedCases = (data.complaints || []).filter(c => c.supervisorReferral?.enabled);
@@ -2864,6 +2751,8 @@ async function createPerson(event) {
                 </div>
               ) : null;
             })()}
+            </div>
+            <MetricGrid metrics={metrics} />
           </div>
         )}
 
@@ -2930,14 +2819,31 @@ async function createPerson(event) {
 
 function MetricGrid({ metrics }) {
   return (
-    <section className="metrics">
+    <section style={{
+      display: "flex",
+      flexDirection: "column",
+      gap: 12,
+      marginLeft: "auto",
+      width: "fit-content"
+    }}>
       {metrics.map((metric) => {
         const Icon = metric.icon;
         return (
-          <article className="metric" key={metric.label}>
-            <Icon size={20} />
-            <strong>{metric.value}</strong>
-            <span>{metric.label}</span>
+          <article style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            padding: "12px 16px",
+            background: "white",
+            border: "1px solid #dce4e1",
+            borderRadius: 8,
+            minWidth: 200
+          }} key={metric.label}>
+            <Icon size={20} color="var(--theme-accent)" />
+            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <strong style={{ fontSize: 18, color: "var(--theme-dark)" }}>{metric.value}</strong>
+              <span style={{ fontSize: 12, color: "#666" }}>{metric.label}</span>
+            </div>
           </article>
         );
       })}
