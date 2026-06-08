@@ -306,9 +306,11 @@ const rankOrder = ["Chief of Police", "Deputy Chief", "Commander", "Captain", "L
 const themeColors = [
   {
     name: "Dark",
-    dark: "#0B1220",
+    dark: "#1e1e1e",
+    surface: "#252525",
     accent: "#3B82F6",
-    text: "#F3F4F6",
+    text: "#e0e0e0",
+    border: "#404040",
     departmentName: "Police Department",
     departmentLogoUrl: "",
     reportHeaderText: "Internal Affairs Investigation",
@@ -317,9 +319,11 @@ const themeColors = [
   },
   {
     name: "Light",
-    dark: "#F9FAFB",
+    dark: "#ffffff",
+    surface: "#f9fafb",
     accent: "#2563EB",
     text: "#1F2937",
+    border: "#dce4e1",
     departmentName: "Police Department",
     departmentLogoUrl: "",
     reportHeaderText: "Internal Affairs Investigation",
@@ -803,8 +807,6 @@ function App() {
     fetchData();
   }, []);
   const [query, setQuery] = useState("");
-  const [caseFilter, setCaseFilter] = useState("All");
-  const [quickAdd, setQuickAdd] = useState("evidence");
 
   const [complaintQuickAdd, setComplaintQuickAdd] = useState("complaint");
 
@@ -821,8 +823,10 @@ function App() {
     const theme = themeColors[themeIndex];
     if (theme) {
       document.documentElement.style.setProperty("--theme-dark", theme.dark);
+      document.documentElement.style.setProperty("--theme-surface", theme.surface);
       document.documentElement.style.setProperty("--theme-accent", theme.accent);
       document.documentElement.style.setProperty("--theme-text", theme.text);
+      document.documentElement.style.setProperty("--theme-border", theme.border);
       document.documentElement.style.setProperty("--dept-name", theme.departmentName);
       document.documentElement.style.setProperty("--dept-logo-url", theme.departmentLogoUrl ? `url('${theme.departmentLogoUrl}')` : "none");
       document.documentElement.style.setProperty("--report-header", theme.reportHeaderText);
@@ -833,6 +837,9 @@ function App() {
   }, [themeIndex]);
 
   const [selectedOfficerId, setSelectedOfficerId] = useState(null);
+  const [openCaseWindows, setOpenCaseWindows] = useState([]);
+  const [activeCaseWindowId, setActiveCaseWindowId] = useState(null);
+  const [showNewCaseModal, setShowNewCaseModal] = useState(false);
 
   async function syncToSupabase(dataToSync) {
     try {
@@ -894,11 +901,12 @@ function App() {
     }
 
     // Update local state
+    const caseId = supabaseId || id;
     const next = {
       ...data,
       cases: [
         {
-          id: supabaseId || id,
+          id: caseId,
           title,
           status: "Intake",
           priority: form.get("priority"),
@@ -908,7 +916,10 @@ function App() {
       ],
     };
     save(next);
-    setActiveCaseId(supabaseId || id);
+    setActiveCaseId(caseId);
+    setShowNewCaseModal(false);
+    setOpenCaseWindows([...openCaseWindows, caseId]);
+    setActiveCaseWindowId(caseId);
     if (event.currentTarget) {
       event.currentTarget.reset();
     }
@@ -2044,93 +2055,6 @@ async function createPerson(event) {
     save(next);
   }
 
-  async function addItem(event) {
-    event.preventDefault();
-    if (!activeCase) return;
-    const form = new FormData(event.currentTarget);
-    const title = form.get("title").toString().trim();
-    if (!title) return;
-    const today = new Date().toISOString().slice(0, 10);
-
-    const next = { ...data };
-    let itemToSave = null;
-
-    if (quickAdd === "evidence") {
-      const newItem = {
-        id: `EV-${String(data.evidence.length + 1).padStart(3, "0")}`,
-        title,
-        type: form.get("type") || "Document",
-        source: form.get("source").toString().trim() || "Unspecified",
-        obtained: today,
-        caseId: activeCase.id,
-        confidence: form.get("confidence") || "Needs review",
-        description: form.get("details").toString().trim(),
-      };
-      next.evidence = [newItem, ...data.evidence];
-      itemToSave = { type: "evidence", data: { evidence_type: newItem.type, title: newItem.title, source: newItem.source, obtained: newItem.obtained, case_id: newItem.caseId, confidence: newItem.confidence, description: newItem.description } };
-    }
-    if (quickAdd === "event") {
-      const newItem = {
-        id: `TL-${String(data.events.length + 1).padStart(3, "0")}`,
-        title,
-        date: form.get("date") || today,
-        time: form.get("time") || "",
-        location: form.get("source").toString().trim() || "Unspecified",
-        caseId: activeCase.id,
-        support: "",
-        confidence: form.get("confidence") || "Medium",
-      };
-      next.events = [newItem, ...data.events];
-      itemToSave = { type: "event", data: { title: newItem.title, date: newItem.date, time: newItem.time, location: newItem.location, case_id: newItem.caseId, confidence: newItem.confidence } };
-    }
-    if (quickAdd === "note") {
-      const newItem = {
-        id: `N-${String(data.notes.length + 1).padStart(3, "0")}`,
-        title,
-        body: form.get("details").toString().trim(),
-        caseId: activeCase.id,
-        created: today,
-        tag: form.get("type") || "General",
-      };
-      next.notes = [newItem, ...data.notes];
-      itemToSave = { type: "note", data: { title: newItem.title, body: newItem.body, case_id: newItem.caseId, created: newItem.created, tag: newItem.tag } };
-    }
-    if (quickAdd === "task") {
-      const newItem = {
-        id: `T-${String(data.tasks.length + 1).padStart(3, "0")}`,
-        title,
-        status: "Open",
-        priority: form.get("confidence") || "Medium",
-        due: form.get("date") || today,
-        caseId: activeCase.id,
-      };
-      next.tasks = [newItem, ...data.tasks];
-      itemToSave = { type: "task", data: { title: newItem.title, status: newItem.status, priority: newItem.priority, due: newItem.due, case_id: newItem.caseId } };
-    }
-
-    // Save to Supabase FIRST before updating local state
-    if (itemToSave) {
-      try {
-        if (itemToSave.type === "evidence") {
-          await evidenceService.create(itemToSave.data);
-        } else if (itemToSave.type === "event") {
-          await eventsService.create(itemToSave.data);
-        } else if (itemToSave.type === "note") {
-          await notesService.create(itemToSave.data);
-        } else if (itemToSave.type === "task") {
-          await tasksService.create(itemToSave.data);
-        }
-      } catch (error) {
-        alert("Error saving item to database: " + error.message);
-        return;
-      }
-    }
-
-    save(next);
-    if (event.currentTarget) {
-      event.currentTarget.reset();
-    }
-  }
 
   async function deleteEvidence(evidenceId) {
     if (!window.confirm("Delete this evidence? This action cannot be undone.")) return;
@@ -2207,19 +2131,6 @@ async function createPerson(event) {
     };
     save(next);
   }
-
-  const filteredCases = useMemo(() => {
-    const lower = query.toLowerCase();
-    return data.cases.filter((item) => {
-      const statusMatch = caseFilter === "All" || item.status === caseFilter;
-      const queryMatch = [item.title, item.id, item.caseNumber]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase()
-        .includes(lower);
-      return statusMatch && queryMatch;
-    });
-  }, [caseFilter, data.cases, query]);
 
   const caseRecords = useMemo(() => {
     if (!activeCase) return {};
@@ -2435,10 +2346,7 @@ async function createPerson(event) {
     return profiles;
   }, [data, earlyInterventionByEmployeeId]);
 
-  const metrics = [
-    { label: "Active cases", value: data.cases.filter((item) => !["Closed", "Archived"].includes(item.status)).length, icon: FileSearch },
-    { label: "Open tasks", value: data.tasks.filter((item) => item.status !== "Done").length, icon: ClipboardList },
-  ];
+  const activeCasesCount = data.cases.filter((item) => !["Closed", "Archived"].includes(item.status)).length;
 
   const caseTitle = (caseId) => data.cases.find((item) => item.id === caseId)?.title ?? "Unassigned";
 
@@ -2474,7 +2382,7 @@ async function createPerson(event) {
   }
 
   return (
-    <main style={{ display: "grid", gridTemplateRows: "128px 1fr", minHeight: "100vh", background: "var(--theme-light)" }}>
+    <main style={{ display: "grid", gridTemplateRows: "128px 1fr", minHeight: "100vh", background: "var(--theme-dark)", color: "var(--theme-text)" }}>
       {/* Top Navigation Bar */}
       <header style={{
         display: "grid",
@@ -2483,13 +2391,13 @@ async function createPerson(event) {
         gap: 20,
         padding: "0 24px",
         borderBottom: `2px solid var(--theme-accent)`,
-        background: "white"
+        background: "var(--theme-surface)"
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <ShieldCheck size={24} color="var(--theme-accent)" />
           <div>
-            <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "var(--theme-dark)" }}>Case Logger</p>
-            <p style={{ margin: "2px 0 0 0", fontSize: 11, color: "#999", fontWeight: 500 }}>Evidence & Investigation</p>
+            <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "var(--theme-text)" }}>Case Logger</p>
+            <p style={{ margin: "2px 0 0 0", fontSize: 11, color: "var(--theme-text)", fontWeight: 500, opacity: 0.7 }}>Evidence & Investigation</p>
           </div>
         </div>
 
@@ -2524,8 +2432,8 @@ async function createPerson(event) {
         gridTemplateColumns: "auto 1fr",
         alignItems: "center",
         padding: "0 24px",
-        borderBottom: `1px solid #e5e7eb`,
-        background: "white",
+        borderBottom: `1px solid var(--theme-border)`,
+        background: "var(--theme-surface)",
         gap: 0,
         position: "absolute",
         top: 128,
@@ -2565,8 +2473,24 @@ async function createPerson(event) {
         padding: "24px"
       }}>
         {activeView === "Dashboard" && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 24, alignItems: "flex-start" }}>
-            <div style={{ minWidth: 0, display: "grid", gap: 24 }}>
+          <div style={{ display: "grid", gap: 24 }}>
+            {/* Active Cases Metric */}
+            <div style={{
+              background: "var(--theme-surface)",
+              border: "1px solid var(--theme-border)",
+              borderRadius: 8,
+              padding: "16px",
+              display: "flex",
+              alignItems: "center",
+              gap: 12
+            }}>
+              <FileSearch size={20} color="var(--theme-accent)" />
+              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <strong style={{ fontSize: 18, color: "var(--theme-dark)" }}>{activeCasesCount}</strong>
+                <span style={{ fontSize: 12, color: "#666" }}>Active cases</span>
+              </div>
+            </div>
+
             {/* Escalation Alerts Section */}
             {(() => {
               const escalatedCases = (data.complaints || []).filter(c => c.supervisorReferral?.enabled);
@@ -2588,7 +2512,7 @@ async function createPerson(event) {
                       <div
                         key={reason}
                         style={{
-                          background: "white",
+                          background: "var(--theme-surface)",
                           border: `2px solid var(--theme-accent)`,
                           borderRadius: 8,
                           padding: 16,
@@ -2757,21 +2681,212 @@ async function createPerson(event) {
                 </div>
               ) : null;
             })()}
-            </div>
-            <MetricGrid metrics={metrics} />
           </div>
         )}
 
         {activeView === "Cases" && (
-          <section style={{ display: "grid", gridTemplateColumns: "280px 1fr 300px", gap: 12, height: "100%" }}>
-            {/* Left: Case List */}
-            <CaseList activeCase={activeCase} caseFilter={caseFilter} filteredCases={filteredCases} setActiveCaseId={setActiveCaseId} setCaseFilter={setCaseFilter} />
+          <section style={{ display: "grid", gridTemplateRows: "auto 1fr", gap: 0, height: "100%" }}>
+            {/* Toolbar: New Case button + Case tabs */}
+            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 24px", background: "var(--theme-surface)", borderBottom: "1px solid #dce4e1", overflow: "auto" }}>
+              <button
+                onClick={() => setShowNewCaseModal(true)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "8px 12px",
+                  background: "var(--theme-accent)",
+                  color: "white",
+                  border: "none",
+                  borderRadius: 4,
+                  cursor: "pointer",
+                  fontWeight: 700,
+                  fontSize: 13,
+                  whiteSpace: "nowrap"
+                }}
+              >
+                <Plus size={16} />
+                New Case
+              </button>
 
-            {/* Middle: Case Detail */}
-            <CaseDetail activeCase={activeCase} caseRecords={caseRecords} data={data} setData={setData} editFinding={editFinding} deleteCase={deleteCase} />
+              {/* Case tabs */}
+              <div style={{ display: "flex", gap: 2, borderLeft: "1px solid #dce4e1", paddingLeft: 12 }}>
+                {openCaseWindows.map((caseId) => {
+                  const caseItem = data.cases.find(c => c.id === caseId);
+                  return (
+                    <button
+                      key={caseId}
+                      onClick={() => {
+                        setActiveCaseWindowId(caseId);
+                        setActiveCaseId(caseId);
+                      }}
+                      style={{
+                        padding: "8px 12px",
+                        background: activeCaseWindowId === caseId ? "var(--theme-accent)" : "#f3f4f6",
+                        color: activeCaseWindowId === caseId ? "white" : "var(--theme-text)",
+                        border: "none",
+                        borderRadius: "4px 4px 0 0",
+                        cursor: "pointer",
+                        fontWeight: activeCaseWindowId === caseId ? 700 : 500,
+                        fontSize: 13,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        maxWidth: 200,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap"
+                      }}
+                      title={caseItem?.title}
+                    >
+                      {caseItem?.title || "Untitled"}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenCaseWindows(openCaseWindows.filter(id => id !== caseId));
+                          if (activeCaseWindowId === caseId && openCaseWindows.length > 0) {
+                            const nextCaseId = openCaseWindows[0] === caseId ? openCaseWindows[1] : openCaseWindows[0];
+                            setActiveCaseWindowId(nextCaseId);
+                            setActiveCaseId(nextCaseId);
+                          }
+                        }}
+                        style={{
+                          all: "unset",
+                          cursor: "pointer",
+                          fontSize: 16,
+                          fontWeight: 700,
+                          marginLeft: 4,
+                          opacity: 0.7
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
-            {/* Right: New Case Form */}
-            <Forms activeCase={activeCase} addItem={addItem} createCase={createCase} quickAdd={quickAdd} setQuickAdd={setQuickAdd} />
+            {/* Case Detail View */}
+            <div style={{ overflow: "auto" }}>
+              {activeCaseWindowId && activeCase ? (
+                <CaseDetail activeCase={activeCase} caseRecords={caseRecords} data={data} setData={setData} editFinding={editFinding} deleteCase={deleteCase} />
+              ) : (
+                <div style={{ padding: "48px 24px", textAlign: "center", color: "#999" }}>
+                  <p>No case selected. Click "New Case" to get started.</p>
+                </div>
+              )}
+            </div>
+
+            {/* New Case Modal */}
+            {showNewCaseModal && (
+              <div style={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: "rgba(0,0,0,0.5)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 1000
+              }}>
+                <div style={{
+                  background: "var(--theme-surface)",
+                  borderRadius: 8,
+                  padding: 24,
+                  width: "100%",
+                  maxWidth: 400,
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.15)"
+                }}>
+                  <h2 style={{ margin: "0 0 20px 0", fontSize: 20, fontWeight: 700, color: "var(--theme-text)" }}>Create New Case</h2>
+                  <form onSubmit={(e) => {
+                    createCase(e);
+                  }} style={{ display: "grid", gap: 16 }}>
+                    <div>
+                      <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "var(--theme-text)", textTransform: "uppercase" }}>
+                        Case Title
+                      </label>
+                      <input
+                        name="title"
+                        placeholder="Enter case title"
+                        required
+                        autoFocus
+                        style={{
+                          width: "100%",
+                          padding: "10px 12px",
+                          border: "1px solid var(--theme-border)",
+                          borderRadius: 4,
+                          fontSize: 14,
+                          fontFamily: "inherit"
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "var(--theme-text)", textTransform: "uppercase" }}>
+                        Priority Level
+                      </label>
+                      <select
+                        name="priority"
+                        defaultValue="Medium"
+                        style={{
+                          width: "100%",
+                          padding: "10px 12px",
+                          border: "1px solid var(--theme-border)",
+                          borderRadius: 4,
+                          fontSize: 14,
+                          fontFamily: "inherit"
+                        }}
+                      >
+                        <option>Critical</option>
+                        <option>High</option>
+                        <option>Medium</option>
+                        <option>Low</option>
+                      </select>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 8 }}>
+                      <button
+                        type="button"
+                        onClick={() => setShowNewCaseModal(false)}
+                        style={{
+                          padding: "10px 16px",
+                          background: "#f3f4f6",
+                          color: "var(--theme-text)",
+                          border: "1px solid var(--theme-border)",
+                          borderRadius: 4,
+                          cursor: "pointer",
+                          fontWeight: 700,
+                          fontSize: 13
+                        }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        style={{
+                          padding: "10px 16px",
+                          background: "var(--theme-accent)",
+                          color: "white",
+                          border: "none",
+                          borderRadius: 4,
+                          cursor: "pointer",
+                          fontWeight: 700,
+                          fontSize: 13,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 6
+                        }}
+                      >
+                        <FilePlus2 size={16} />
+                        Open Case
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
           </section>
         )}
 
@@ -2829,8 +2944,8 @@ function MetricGrid({ metrics }) {
             alignItems: "center",
             gap: 12,
             padding: "12px 16px",
-            background: "white",
-            border: "1px solid #dce4e1",
+            background: "var(--theme-surface)",
+            border: "1px solid var(--theme-border)",
             borderRadius: 8,
             minWidth: 200
           }} key={metric.label}>
@@ -2842,41 +2957,6 @@ function MetricGrid({ metrics }) {
           </article>
         );
       })}
-    </section>
-  );
-}
-
-function CaseList({ activeCase, caseFilter, filteredCases, setActiveCaseId, setCaseFilter }) {
-  return (
-    <section className="panel case-list">
-      <div className="panel-head">
-        <h2>Cases</h2>
-        <select value={caseFilter} onChange={(event) => setCaseFilter(event.target.value)}>
-          <option>All</option>
-          {caseStatuses.map((status) => (
-            <option key={status}>{status}</option>
-          ))}
-        </select>
-      </div>
-      <div className="stack">
-        {filteredCases.length ? (
-          filteredCases.map((item) => (
-            <button className={`case-card ${activeCase?.id === item.id ? "selected" : ""}`} key={item.id} onClick={() => setActiveCaseId(item.id)}>
-              <span className="case-id">{item.id}</span>
-              <strong>{item.title}</strong>
-              <small>{item.summary}</small>
-              <span className="meta-row">
-                <Pill value={item.status} />
-                <Pill value={item.priority} />
-                <Pill value={item.classification} />
-                <span>Opened {item.opened}</span>
-              </span>
-            </button>
-          ))
-        ) : (
-          <p className="empty-small">No cases match this view.</p>
-        )}
-      </div>
     </section>
   );
 }
@@ -2900,7 +2980,7 @@ function CaseDetail({ activeCase, caseRecords, data, setData, editFinding, delet
             </div>
 
             {/* Report Text Area with Toolbar */}
-            <div style={{ border: "1px solid #dce4e1", borderRadius: 8, overflow: "hidden", display: "grid", gridTemplateRows: "auto 1fr" }}>
+            <div style={{ border: "1px solid var(--theme-border)", borderRadius: 8, overflow: "hidden", display: "grid", gridTemplateRows: "auto 1fr" }}>
               <div style={{ background: "#f9fafb", borderBottom: "1px solid #dce4e1", padding: "8px 12px", display: "flex", gap: 8, alignItems: "center" }}>
                 <button type="button" title="Bold" style={{ all: "unset", padding: "4px 8px", cursor: "pointer", fontWeight: 700, fontSize: 12 }}>B</button>
                 <button type="button" title="Italic" style={{ all: "unset", padding: "4px 8px", cursor: "pointer", fontStyle: "italic", fontSize: 12 }}>I</button>
@@ -2949,7 +3029,7 @@ function CaseDetail({ activeCase, caseRecords, data, setData, editFinding, delet
           {/* Right: Evidence and People & Entities */}
           <div style={{ display: "grid", gridTemplateRows: "auto auto 1fr auto", gap: 12 }}>
             {/* Evidence */}
-            <div style={{ background: "white", border: "1px solid #dce4e1", borderRadius: 8, padding: 12 }}>
+            <div style={{ background: "var(--theme-surface)", border: "1px solid var(--theme-border)", borderRadius: 8, padding: 12 }}>
               <h4 style={{ margin: "0 0 8px 0", fontSize: 13, fontWeight: 700, color: "var(--theme-text)", display: "flex", alignItems: "center", gap: 6 }}>
                 <Fingerprint size={16} />
                 Evidence
@@ -2968,7 +3048,7 @@ function CaseDetail({ activeCase, caseRecords, data, setData, editFinding, delet
             </div>
 
             {/* People & Entities */}
-            <div style={{ background: "white", border: "1px solid #dce4e1", borderRadius: 8, padding: 12 }}>
+            <div style={{ background: "var(--theme-surface)", border: "1px solid var(--theme-border)", borderRadius: 8, padding: 12 }}>
               <h4 style={{ margin: "0 0 8px 0", fontSize: 13, fontWeight: 700, color: "var(--theme-text)", display: "flex", alignItems: "center", gap: 6 }}>
                 <UserRound size={16} />
                 People
@@ -3017,89 +3097,6 @@ function CaseDetail({ activeCase, caseRecords, data, setData, editFinding, delet
           Create a case to begin logging records.
         </div>
       )}
-    </section>
-  );
-}
-
-function Forms({ activeCase, addItem, createCase, quickAdd, setQuickAdd }) {
-  return (
-    <section className="panel forms" style={{ display: "grid", gridTemplateRows: "auto auto 1fr", gap: 12, height: "100%", overflow: "auto" }}>
-      <div className="panel-head">
-        <h2>New Case</h2>
-        <Plus size={18} />
-      </div>
-      <form onSubmit={createCase} style={{ display: "grid", gap: 12 }}>
-        <div>
-          <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
-            Case Title
-          </label>
-          <input name="title" placeholder="Enter case title" required style={{ width: "100%", padding: "8px 12px", border: "1px solid #dce4e1", borderRadius: 4, fontSize: 14 }} />
-        </div>
-        <div>
-          <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
-            Priority Level
-          </label>
-          <select name="priority" defaultValue="Medium" style={{ width: "100%", padding: "8px 12px", border: "1px solid #dce4e1", borderRadius: 4, fontSize: 14 }}>
-            <option>Critical</option>
-            <option>High</option>
-            <option>Medium</option>
-            <option>Low</option>
-          </select>
-        </div>
-        <button className="primary" type="submit" style={{ marginTop: "auto" }}>
-          <FilePlus2 size={17} />
-          Create Case
-        </button>
-      </form>
-
-      <div className="panel-head compact">
-        <h2>Quick Add</h2>
-        <select value={quickAdd} onChange={(event) => setQuickAdd(event.target.value)}>
-          <option value="evidence">Evidence</option>
-          <option value="event">Timeline</option>
-          <option value="note">Note</option>
-          <option value="task">Task</option>
-        </select>
-      </div>
-      <form onSubmit={addItem}>
-        {!activeCase && <p className="empty-small">Create or select a case before adding records.</p>}
-        <input name="title" placeholder={`${quickAdd} title`} disabled={!activeCase} />
-        <div className="row">
-          <input name="type" placeholder="Type/tag" disabled={!activeCase} />
-          <select name="confidence" defaultValue="Medium" disabled={!activeCase}>
-            <option>Confirmed</option>
-            <option>High</option>
-            <option>Medium</option>
-            <option>Low</option>
-            <option>Needs review</option>
-          </select>
-        </div>
-        <div className="row">
-          <div style={{ flex: 1 }}>
-            <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
-              Date (YYYY-MM-DD)
-            </label>
-            <input name="source" placeholder="Location or source" disabled={!activeCase} />
-          </div>
-          <div style={{ flex: 1 }}>
-            <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
-              Event/Discovery Date (YYYY-MM-DD)
-            </label>
-            <input name="date" type="date" disabled={!activeCase} />
-          </div>
-        </div>
-        <div style={{ marginTop: 10 }}>
-          <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4, color: "var(--theme-text)", textTransform: "uppercase" }}>
-            Time (HH:MM - Optional)
-          </label>
-          <input name="time" type="time" disabled={!activeCase} />
-        </div>
-        <textarea name="details" placeholder="Description, observation, or chain-of-custody note" disabled={!activeCase} />
-        <button className="primary" type="submit" disabled={!activeCase}>
-          <Database size={17} />
-          Add to active case
-        </button>
-      </form>
     </section>
   );
 }
@@ -3847,7 +3844,7 @@ function RecordsView({ data, setData }) {
                 width: "100%",
                 padding: "8px",
                 marginBottom: "8px",
-                border: "1px solid #dce4e1",
+                border: "1px solid var(--theme-border)",
                 borderRadius: "4px",
                 fontSize: "12px",
               }}
@@ -3886,7 +3883,7 @@ function RecordsView({ data, setData }) {
               width: "100%",
               maxWidth: "400px",
               padding: "8px 12px",
-              border: "1px solid #dce4e1",
+              border: "1px solid var(--theme-border)",
               borderRadius: "4px",
               fontSize: "13px",
             }}
@@ -3933,7 +3930,7 @@ function RecordsView({ data, setData }) {
                 style={{
                   width: "100%",
                   padding: "8px",
-                  border: "1px solid #dce4e1",
+                  border: "1px solid var(--theme-border)",
                   borderRadius: "4px",
                   fontSize: "12px",
                 }}
@@ -3950,7 +3947,7 @@ function RecordsView({ data, setData }) {
                 style={{
                   width: "100%",
                   padding: "8px",
-                  border: "1px solid #dce4e1",
+                  border: "1px solid var(--theme-border)",
                   borderRadius: "4px",
                   fontSize: "12px",
                 }}
@@ -3974,7 +3971,7 @@ function RecordsView({ data, setData }) {
                 style={{
                   width: "100%",
                   padding: "8px",
-                  border: "1px solid #dce4e1",
+                  border: "1px solid var(--theme-border)",
                   borderRadius: "4px",
                   fontSize: "12px",
                   minHeight: "60px",
@@ -4099,7 +4096,7 @@ function OfficerProfileView({ data, officerProfiles, selectedOfficerId, setSelec
     <section className="collection-view">
       <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: 16, minHeight: "80vh" }}>
         {/* Officer Selector Sidebar */}
-        <div style={{ background: "#ffffff", border: "1px solid #dce4e1", borderRadius: 8, padding: 16, overflow: "auto" }}>
+        <div style={{ background: "#ffffff", border: "1px solid var(--theme-border)", borderRadius: 8, padding: 16, overflow: "auto" }}>
           <h3 style={{ margin: "0 0 12px" }}>Officers</h3>
           <div style={{ display: "grid", gap: 8 }}>
             {sortedOfficers.map((officer) => (
@@ -4128,7 +4125,7 @@ function OfficerProfileView({ data, officerProfiles, selectedOfficerId, setSelec
         {profile ? (
           <div style={{ overflow: "auto" }}>
             {/* Edit Officer Info Form */}
-            <div style={{ background: "#ffffff", border: "1px solid #dce4e1", borderRadius: 8, padding: 16, marginBottom: 16 }}>
+            <div style={{ background: "#ffffff", border: "1px solid var(--theme-border)", borderRadius: 8, padding: 16, marginBottom: 16 }}>
               <h3 style={{ margin: "0 0 16px" }}>Officer Information</h3>
               <form
                 onSubmit={(e) => {
@@ -4188,7 +4185,7 @@ function OfficerProfileView({ data, officerProfiles, selectedOfficerId, setSelec
             </div>
 
             {/* Early Intervention Risk Panel */}
-            <div style={{ background: "#ffffff", border: "1px solid #dce4e1", borderRadius: 8, padding: 16, marginBottom: 16 }}>
+            <div style={{ background: "#ffffff", border: "1px solid var(--theme-border)", borderRadius: 8, padding: 16, marginBottom: 16 }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 24, alignItems: "start" }}>
                 {/* Risk Score Display */}
                 <div>
@@ -4342,7 +4339,7 @@ function OfficerProfileView({ data, officerProfiles, selectedOfficerId, setSelec
                 { label: "Risk Score", value: profile.riskScore, isScore: true, override: profile.riskScoreOverride },
                 { label: "Early Intervention Flags", value: profile.earlyInterventionFlags.length },
               ].map((metric, idx) => (
-                <div key={idx} style={{ background: "#ffffff", border: "1px solid #dce4e1", borderRadius: 8, padding: 16 }}>
+                <div key={idx} style={{ background: "#ffffff", border: "1px solid var(--theme-border)", borderRadius: 8, padding: 16 }}>
                   <small style={{ color: "var(--theme-text)", display: "block", marginBottom: 8 }}>{metric.label}</small>
                   {metric.isScore ? (
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -4367,7 +4364,7 @@ function OfficerProfileView({ data, officerProfiles, selectedOfficerId, setSelec
             </div>
 
             {/* Risk Score Override Form */}
-            <div style={{ background: "#ffffff", border: "1px solid #dce4e1", borderRadius: 8, padding: 16, marginBottom: 16 }}>
+            <div style={{ background: "#ffffff", border: "1px solid var(--theme-border)", borderRadius: 8, padding: 16, marginBottom: 16 }}>
               <h3 style={{ margin: "0 0 12px" }}>Risk Score Override</h3>
               <div style={{ display: "grid", gap: 10 }}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
@@ -4402,7 +4399,7 @@ function OfficerProfileView({ data, officerProfiles, selectedOfficerId, setSelec
             </div>
 
             {/* Training Deficiencies */}
-            <div style={{ background: "#ffffff", border: "1px solid #dce4e1", borderRadius: 8, padding: 16, marginBottom: 16 }}>
+            <div style={{ background: "#ffffff", border: "1px solid var(--theme-border)", borderRadius: 8, padding: 16, marginBottom: 16 }}>
               <h3 style={{ margin: "0 0 12px" }}>Training Deficiencies</h3>
               <textarea
                 value={profile.trainingDeficiencies}
@@ -4418,7 +4415,7 @@ function OfficerProfileView({ data, officerProfiles, selectedOfficerId, setSelec
                 complaint.subjectOfficerIds && complaint.subjectOfficerIds.includes(profile.officer.id)
               );
               return (
-                <div style={{ background: "#ffffff", border: "1px solid #dce4e1", borderRadius: 8, padding: 16, marginBottom: 16 }}>
+                <div style={{ background: "#ffffff", border: "1px solid var(--theme-border)", borderRadius: 8, padding: 16, marginBottom: 16 }}>
                   <h3 style={{ margin: "0 0 12px" }}>Complaints Against Officer</h3>
                   {complaintsAgainstOfficer.length === 0 ? (
                     <p style={{ color: "var(--theme-text)", fontSize: 13, margin: 0 }}>No complaints filed against this officer.</p>
@@ -4475,7 +4472,7 @@ function OfficerProfileView({ data, officerProfiles, selectedOfficerId, setSelec
 
             {/* Complaint History */}
             {profile.complaints.length > 0 && (
-              <div style={{ background: "#ffffff", border: "1px solid #dce4e1", borderRadius: 8, padding: 16, marginBottom: 16 }}>
+              <div style={{ background: "#ffffff", border: "1px solid var(--theme-border)", borderRadius: 8, padding: 16, marginBottom: 16 }}>
                 <h3 style={{ margin: "0 0 12px" }}>Complaint History ({profile.complaints.length})</h3>
                 <div style={{ display: "grid", gap: 10 }}>
                   {profile.complaints.slice(0, 10).map((complaint) => (
@@ -4495,7 +4492,7 @@ function OfficerProfileView({ data, officerProfiles, selectedOfficerId, setSelec
 
             {/* Sustained Findings */}
             {profile.sustainedFindings.length > 0 && (
-              <div style={{ background: "#ffffff", border: "1px solid #dce4e1", borderRadius: 8, padding: 16 }}>
+              <div style={{ background: "#ffffff", border: "1px solid var(--theme-border)", borderRadius: 8, padding: 16 }}>
                 <h3 style={{ margin: "0 0 12px" }}>Sustained Findings ({profile.sustainedFindings.length})</h3>
                 <div style={{ display: "grid", gap: 10 }}>
                   {profile.sustainedFindings.map((finding) => (
@@ -4741,7 +4738,7 @@ function ViolationForm({ violation, onSubmit, onCancel, allViolations = [] }) {
             {violation ? "Update Violation" : "Create Violation"}
           </button>
           {violation && (
-            <button type="button" onClick={onCancel} style={{ background: "#f6f9f7", border: "1px solid #dce4e1", borderRadius: 6, cursor: "pointer" }}>
+            <button type="button" onClick={onCancel} style={{ background: "#f6f9f7", border: "1px solid var(--theme-border)", borderRadius: 6, cursor: "pointer" }}>
               Cancel
             </button>
           )}
@@ -4942,7 +4939,7 @@ function PolicyForm({ policy, onSubmit, onCancel, violations }) {
             {policy ? "Update Policy" : "Create Policy"}
           </button>
           {policy && (
-            <button type="button" onClick={onCancel} style={{ background: "#f6f9f7", border: "1px solid #dce4e1", borderRadius: 6, cursor: "pointer" }}>
+            <button type="button" onClick={onCancel} style={{ background: "#f6f9f7", border: "1px solid var(--theme-border)", borderRadius: 6, cursor: "pointer" }}>
               Cancel
             </button>
           )}
@@ -4958,7 +4955,7 @@ function TemplateLibraryPanel({ templates, onEdit, onDelete }) {
       <h3 style={{ margin: "0 0 16px" }}>Investigation Templates</h3>
       <div style={{ display: "grid", gap: 12 }}>
         {templates.map((t) => (
-          <div key={t.id} style={{ border: "1px solid #dce4e1", borderRadius: 6, padding: 12 }}>
+          <div key={t.id} style={{ border: "1px solid var(--theme-border)", borderRadius: 6, padding: 12 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 8 }}>
               <div>
                 <strong style={{ fontSize: 14, color: "var(--theme-text)" }}>{t.name}</strong>
@@ -5139,7 +5136,7 @@ function TemplateForm({ template, onSubmit, onCancel }) {
             {template ? "Update Template" : "Create Template"}
           </button>
           {template && (
-            <button type="button" onClick={onCancel} style={{ background: "#f6f9f7", border: "1px solid #dce4e1", borderRadius: 6, cursor: "pointer" }}>
+            <button type="button" onClick={onCancel} style={{ background: "#f6f9f7", border: "1px solid var(--theme-border)", borderRadius: 6, cursor: "pointer" }}>
               Cancel
             </button>
           )}
@@ -5211,7 +5208,7 @@ function CustomDropdownManager({ data, onUpdateDropdown, onAddOption, onRemoveOp
       {tab === "manage" && (
         <div style={{ display: "grid", gap: 16 }}>
           {customizableDropdowns.map((dropdown) => (
-            <div key={dropdown.key} style={{ border: "1px solid #dce4e1", borderRadius: 6, padding: 12 }}>
+            <div key={dropdown.key} style={{ border: "1px solid var(--theme-border)", borderRadius: 6, padding: 12 }}>
               <strong style={{ fontSize: 13 }}>{dropdown.label}</strong>
               <small style={{ display: "block", color: "var(--theme-text)", marginBottom: 10 }}>{dropdown.description}</small>
               <div style={{ display: "grid", gap: 8 }}>
@@ -5528,7 +5525,7 @@ function BrandingSettingsPanel({ themeIndex, themeColors, setThemeIndex }) {
                 type="color"
                 value={pendingChanges.accent}
                 onChange={(e) => handleThemeChange("accent", e.target.value)}
-                style={{ width: 60, height: 44, border: "1px solid #dce4e1", borderRadius: 6, cursor: "pointer" }}
+                style={{ width: 60, height: 44, border: "1px solid var(--theme-border)", borderRadius: 6, cursor: "pointer" }}
               />
               <input
                 type="text"
@@ -5549,7 +5546,7 @@ function BrandingSettingsPanel({ themeIndex, themeColors, setThemeIndex }) {
               type="color"
               value={pendingChanges.accentSecondaryColor}
               onChange={(e) => handleThemeChange("accentSecondaryColor", e.target.value)}
-              style={{ width: 60, height: 44, border: "1px solid #dce4e1", borderRadius: 6, cursor: "pointer" }}
+              style={{ width: 60, height: 44, border: "1px solid var(--theme-border)", borderRadius: 6, cursor: "pointer" }}
             />
             <input
               type="text"
@@ -5820,7 +5817,7 @@ function SettingsView({ themeIndex, setThemeIndex, data, setData, createViolatio
                 </div>
               ))}
             </div>
-            <div style={{ marginTop: 12, padding: 8, backgroundColor: "var(--theme-light)", borderRadius: 6, border: "1px solid #dce4e1" }}>
+            <div style={{ marginTop: 12, padding: 8, backgroundColor: "var(--theme-light)", borderRadius: 6, border: "1px solid var(--theme-border)" }}>
               <p style={{ margin: 0, fontSize: 12, color: "var(--theme-text)" }}>
                 Weight Sum: <strong>{Object.values(eiWeights).reduce((a, b) => a + b, 0)}/100</strong>
               </p>
@@ -5838,7 +5835,7 @@ function SettingsView({ themeIndex, setThemeIndex, data, setData, createViolatio
                   max="99"
                   value={eiThresholds.monitorMax}
                   onChange={(e) => setEiThresholds({ ...eiThresholds, monitorMax: parseInt(e.target.value) })}
-                  style={{ padding: "6px 8px", border: "1px solid #dce4e1", borderRadius: 4, fontSize: 12 }}
+                  style={{ padding: "6px 8px", border: "1px solid var(--theme-border)", borderRadius: 4, fontSize: 12 }}
                 />
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", gap: 12, alignItems: "center" }}>
@@ -5849,11 +5846,11 @@ function SettingsView({ themeIndex, setThemeIndex, data, setData, createViolatio
                   max="99"
                   value={eiThresholds.reviewMax}
                   onChange={(e) => setEiThresholds({ ...eiThresholds, reviewMax: parseInt(e.target.value) })}
-                  style={{ padding: "6px 8px", border: "1px solid #dce4e1", borderRadius: 4, fontSize: 12 }}
+                  style={{ padding: "6px 8px", border: "1px solid var(--theme-border)", borderRadius: 4, fontSize: 12 }}
                 />
               </div>
             </div>
-            <div style={{ marginTop: 12, padding: 8, backgroundColor: "var(--theme-light)", borderRadius: 6, border: "1px solid #dce4e1" }}>
+            <div style={{ marginTop: 12, padding: 8, backgroundColor: "var(--theme-light)", borderRadius: 6, border: "1px solid var(--theme-border)" }}>
               <p style={{ margin: "0 0 4px 0", fontSize: 12, color: "var(--theme-text)" }}>
                 Monitor: 0–{eiThresholds.monitorMax}
               </p>
@@ -6215,8 +6212,8 @@ function AppWrapper() {
           top: "24px",
           right: "240px",
           zIndex: 1000,
-          background: "white",
-          border: "1px solid #dce4e1",
+          background: "var(--theme-surface)",
+          border: "1px solid var(--theme-border)",
           padding: "8px 12px",
           borderRadius: "6px",
           cursor: "pointer",
