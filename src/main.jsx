@@ -812,7 +812,7 @@ function App() {
 
   const activeCase = data.cases.find((item) => item.id === activeCaseId) ?? data.cases[0];
   const activeComplaint = data.complaints?.find((item) => item.id === activeComplaintId) ?? data.complaints?.[0];
-  const navItems = ["Dashboard", "Cases", "Evidence", "People", "Officer Profile", "Records", "Timeline", "Tasks", "Notes", "Complaints", "Adjudication", "Reports", "Settings"];
+  const navItems = ["Dashboard", "Cases", "Evidence", "People", "Officer Profile", "Records", "Complaints", "Adjudication", "Reports", "Settings"];
   const [themeIndex, setThemeIndex] = useState(() => {
     const saved = localStorage.getItem("theme-index");
     const index = saved ? parseInt(saved) : 0;
@@ -2419,7 +2419,7 @@ async function createPerson(event) {
             <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "var(--theme-dark)" }}>
               {themeColors[themeIndex]?.departmentName || "Police Department"}
             </p>
-            <p style={{ margin: "2px 0 0 0", fontSize: 10, color: "#999" }}>
+            <p style={{ margin: "2px 0 0 0", fontSize: 10, color: "var(--theme-text)", opacity: 0.6 }}>
               {activeView}
             </p>
           </div>
@@ -2473,8 +2473,8 @@ async function createPerson(event) {
         padding: "24px"
       }}>
         {activeView === "Dashboard" && (
-          <div style={{ display: "grid", gap: 24 }}>
-            {/* Active Cases Metric */}
+          <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: 24, alignItems: "flex-start" }}>
+            {/* Left Column: Active Cases */}
             <div style={{
               background: "var(--theme-surface)",
               border: "1px solid var(--theme-border)",
@@ -2482,15 +2482,18 @@ async function createPerson(event) {
               padding: "16px",
               display: "flex",
               alignItems: "center",
-              gap: 12
+              gap: 12,
+              height: "fit-content"
             }}>
               <FileSearch size={20} color="var(--theme-accent)" />
               <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                <strong style={{ fontSize: 18, color: "var(--theme-dark)" }}>{activeCasesCount}</strong>
-                <span style={{ fontSize: 12, color: "#666" }}>Active cases</span>
+                <strong style={{ fontSize: 18, color: "var(--theme-text)" }}>{activeCasesCount}</strong>
+                <span style={{ fontSize: 12, color: "var(--theme-text)", opacity: 0.6 }}>Active cases</span>
               </div>
             </div>
 
+            {/* Right Column: Alerts and Flags */}
+            <div style={{ display: "grid", gap: 24 }}>
             {/* Escalation Alerts Section */}
             {(() => {
               const escalatedCases = (data.complaints || []).filter(c => c.supervisorReferral?.enabled);
@@ -2557,7 +2560,7 @@ async function createPerson(event) {
                                 justifyContent: "space-between",
                                 padding: 12,
                                 background: "var(--theme-light)",
-                                border: "1px solid #e5e7eb",
+                                border: "1px solid var(--theme-border)",
                                 borderRadius: 6,
                                 cursor: "pointer",
                                 transition: "all 0.2s"
@@ -2681,6 +2684,7 @@ async function createPerson(event) {
                 </div>
               ) : null;
             })()}
+            </div>
           </div>
         )}
 
@@ -2710,7 +2714,7 @@ async function createPerson(event) {
               </button>
 
               {/* Case tabs */}
-              <div style={{ display: "flex", gap: 2, borderLeft: "1px solid #dce4e1", paddingLeft: 12 }}>
+              <div style={{ display: "flex", gap: 2, borderLeft: `1px solid var(--theme-border)`, paddingLeft: 12 }}>
                 {openCaseWindows.map((caseId) => {
                   const caseItem = data.cases.find(c => c.id === caseId);
                   return (
@@ -2772,7 +2776,7 @@ async function createPerson(event) {
               {activeCaseWindowId && activeCase ? (
                 <CaseDetail activeCase={activeCase} caseRecords={caseRecords} data={data} setData={setData} editFinding={editFinding} deleteCase={deleteCase} />
               ) : (
-                <div style={{ padding: "48px 24px", textAlign: "center", color: "#999" }}>
+                <div style={{ padding: "48px 24px", textAlign: "center", color: "var(--theme-text)", opacity: 0.6 }}>
                   <p>No case selected. Click "New Case" to get started.</p>
                 </div>
               )}
@@ -2851,7 +2855,7 @@ async function createPerson(event) {
                         onClick={() => setShowNewCaseModal(false)}
                         style={{
                           padding: "10px 16px",
-                          background: "#f3f4f6",
+                          background: "var(--theme-surface)",
                           color: "var(--theme-text)",
                           border: "1px solid var(--theme-border)",
                           borderRadius: 4,
@@ -2897,9 +2901,6 @@ async function createPerson(event) {
         {activeView === "Complaints" && <ComplaintsView data={data} activeCase={activeCase} visibleComplaints={visibleRecords.complaints} createComplaint={submitComplaint} deleteComplaint={deleteComplaint} setActiveComplaintId={setActiveComplaintId} />}
         {activeView === "Adjudication" && <AdjudicationTab data={data} activeCase={activeCase} editFinding={editFinding} />}
 
-        {activeView === "Timeline" && <CollectionView title="Timeline" icon={CalendarDays} items={visibleRecords.events} render={(item) => <EventItemWithDelete item={item} onDelete={deleteEvent} />} />}
-        {activeView === "Tasks" && <CollectionView title="Tasks" icon={ClipboardList} items={visibleRecords.tasks} render={(item) => <TaskItemWithDelete item={item} onDelete={deleteTask} />} />}
-        {activeView === "Notes" && <CollectionView title="Notes" icon={FileSearch} items={visibleRecords.notes} render={(item) => <NoteItemWithDelete item={item} onDelete={deleteNote} />} />}
         {activeView === "Reports" && <Reports data={data} metrics={metrics} earlyInterventionByEmployeeId={earlyInterventionByEmployeeId} />}
         {activeView === "Settings" && (
           <SettingsView
@@ -2952,7 +2953,7 @@ function MetricGrid({ metrics }) {
             <Icon size={20} color="var(--theme-accent)" />
             <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <strong style={{ fontSize: 18, color: "var(--theme-dark)" }}>{metric.value}</strong>
-              <span style={{ fontSize: 12, color: "#666" }}>{metric.label}</span>
+              <span style={{ fontSize: 12, color: "var(--theme-text)" }}>{metric.label}</span>
             </div>
           </article>
         );
@@ -2970,12 +2971,12 @@ function CaseDetail({ activeCase, caseRecords, data, setData, editFinding, delet
           <div style={{ display: "grid", gridTemplateRows: "auto auto 1fr auto", gap: 12 }}>
             {/* Case Header */}
             <div>
-              <span style={{ fontSize: 12, color: "#999", fontWeight: 600 }}>{activeCase.id}</span>
+              <span style={{ fontSize: 12, color: "var(--theme-text)", opacity: 0.6, fontWeight: 600 }}>{activeCase.id}</span>
               <h2 style={{ margin: "4px 0 0 0", fontSize: 24, fontWeight: 700, color: "var(--theme-text)" }}>{activeCase.title}</h2>
               <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
                 <Pill value={activeCase.status} />
                 <Pill value={activeCase.priority} />
-                <span style={{ fontSize: 12, color: "#999" }}>Opened {activeCase.opened}</span>
+                <span style={{ fontSize: 12, color: "var(--theme-text)", opacity: 0.6 }}>Opened {activeCase.opened}</span>
               </div>
             </div>
 
@@ -3042,7 +3043,7 @@ function CaseDetail({ activeCase, caseRecords, data, setData, editFinding, delet
                     </div>
                   ))
                 ) : (
-                  <p style={{ margin: 0, color: "#999", fontSize: 11 }}>No evidence added</p>
+                  <p style={{ margin: 0, color: "var(--theme-text)", opacity: 0.6, fontSize: 11 }}>No evidence added</p>
                 )}
               </div>
             </div>
@@ -3058,11 +3059,11 @@ function CaseDetail({ activeCase, caseRecords, data, setData, editFinding, delet
                   caseRecords.people.map((item) => (
                     <div key={item.id} style={{ background: "#f0f5f9", padding: 6, borderRadius: 4, fontSize: 11, color: "var(--theme-text)" }}>
                       <strong>{item.name}</strong>
-                      {item.badgeNumber && <div style={{ fontSize: 10, color: "#999" }}>#{item.badgeNumber}</div>}
+                      {item.badgeNumber && <div style={{ fontSize: 10, color: "var(--theme-text)", opacity: 0.6 }}>#{item.badgeNumber}</div>}
                     </div>
                   ))
                 ) : (
-                  <p style={{ margin: 0, color: "#999", fontSize: 11 }}>No people added</p>
+                  <p style={{ margin: 0, color: "var(--theme-text)", opacity: 0.6, fontSize: 11 }}>No people added</p>
                 )}
               </div>
             </div>
@@ -3093,7 +3094,7 @@ function CaseDetail({ activeCase, caseRecords, data, setData, editFinding, delet
           </div>
         </>
       ) : (
-        <div style={{ gridColumn: "1/-1", display: "flex", alignItems: "center", justifyContent: "center", minHeight: 300, color: "#999", fontSize: 14 }}>
+        <div style={{ gridColumn: "1/-1", display: "flex", alignItems: "center", justifyContent: "center", minHeight: 300, color: "var(--theme-text)", opacity: 0.6, fontSize: 14 }}>
           Create a case to begin logging records.
         </div>
       )}
@@ -4271,7 +4272,7 @@ function OfficerProfileView({ data, officerProfiles, selectedOfficerId, setSelec
                     Notify Supervisor
                   </button>
 
-                  <small style={{ display: "block", marginTop: 12, color: "#666", fontSize: 11 }}>
+                  <small style={{ display: "block", marginTop: 12, color: "var(--theme-text)", fontSize: 11 }}>
                     ⓘ Risk scores are a screening tool, not a finding.
                   </small>
                 </div>
@@ -4424,7 +4425,7 @@ function OfficerProfileView({ data, officerProfiles, selectedOfficerId, setSelec
                       {complaintsAgainstOfficer.map(complaint => (
                         <div key={complaint.id} style={{
                           padding: 10,
-                          border: "1px solid #e5e7eb",
+                          border: "1px solid var(--theme-border)",
                           borderRadius: 6,
                           background: "#f9fafb"
                         }}>
@@ -4665,7 +4666,7 @@ function ViolationForm({ violation, onSubmit, onCancel, allViolations = [] }) {
             defaultValue={displayCode}
             placeholder="Auto-generated"
             disabled
-            style={{ background: "#f6f9f7", color: "#999" }}
+            style={{ background: "#f6f9f7", color: "var(--theme-text)", opacity: 0.6 }}
           />
         </div>
         <div>
@@ -4834,7 +4835,7 @@ function PolicyForm({ policy, onSubmit, onCancel, violations }) {
             defaultValue={policy?.id || ""}
             placeholder="Auto-generated"
             disabled
-            style={{ background: "#f6f9f7", color: "#999" }}
+            style={{ background: "#f6f9f7", color: "var(--theme-text)", opacity: 0.6 }}
           />
         </div>
         <div>
@@ -5027,7 +5028,7 @@ function TemplateForm({ template, onSubmit, onCancel }) {
             defaultValue={template?.id || ""}
             placeholder="Auto-generated"
             disabled
-            style={{ background: "#f6f9f7", color: "#999" }}
+            style={{ background: "#f6f9f7", color: "var(--theme-text)", opacity: 0.6 }}
           />
         </div>
         <div>
